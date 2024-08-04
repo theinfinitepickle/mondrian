@@ -5,382 +5,84 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Mondrian Art Puzzle</title>
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
-
+    <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      body {
+      .status-item {
+        width: 30%;
         display: flex;
-        flex-direction: column;
-        justify-content: center;
         align-items: center;
-        height: 100vh;
-        margin: 0;
-        overflow: hidden; /* Prevent scrolling */
-        user-select: none; /* Disable text selection */
-        touch-action: none; /* Prevent default touch actions */
-      background-image: url('https://cdn.glitch.global/12560e61-fbb5-4713-855b-d8aaab300f54/Piet%20Mondrian_03.png?v=1718511602432');
-      background-size: cover;
-      background-position: center;
+        justify-content: center;
       }
       #status-bar {
         display: flex;
-        flex-direction: column;
-        align-items: center;
-        margin-bottom: 20px;
-      }
-      .status-item {
-        margin: 5px;
-        font-weight: bold;
-      }
-      .status-item.valid {
-        color: darkgreen;
-      }
-      .status-item.invalid {
-        color: red;
-      }
-      #rectangles-list {
-        margin-top: 20px;
-        width: 300px;
-        height: 200px;
-        overflow-y: auto; /* Enable scrolling within the list */
-        border: 1px solid black;
-        padding: 10px;
-        box-sizing: border-box;
-        display: none; /* Hide the rectangles list */
-      }
-      #clear-button {
-        margin-top: 10px;
-        font-size: 20px;
-        cursor: pointer;
+        justify-content: space-between;
+        gap: 1rem;
       }
     </style>
-    <link rel="manifest" href="manifest.json" />
   </head>
-  <body>
-    <div id="status-bar">
-      <div id="canvas-status" class="status-item">✗ The canvas is not covered</div>
-      <div id="duplicate-status" class="status-item">✗ Duplicates found</div>
-      <div id="score-status" class="status-item">Score is ...</div>
-      <button id="clear-button">⟳</button>
+  <body class="bg-gray-100 min-h-screen p-4">
+    <div class="container mx-auto max-w-7xl">
+      <h1 class="text-3xl font-bold text-center mb-6">Mondrian Art Puzzle</h1>
+      <div class="flex flex-col lg:flex-row gap-6 justify-center items-start">
+        <!-- Left Column -->
+        <div class="w-full lg:w-1/2 space-y-6">
+          <!-- N Selection -->
+          <div class="bg-white p-4 rounded shadow">
+            <h2 class="text-xl font-semibold mb-4 text-center">Select Grid Size (N)</h2>
+            <div class="grid grid-cols-5 gap-2 rounded-xl bg-gray-200 p-2">
+              <div>
+                <input type="radio" name="grid-size" id="grid-4" value="4" class="peer hidden" checked />
+                <label for="grid-4" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">4</label>
+              </div>
+              <div>
+                <input type="radio" name="grid-size" id="grid-5" value="5" class="peer hidden" />
+                <label for="grid-5" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">5</label>
+              </div>
+              <div>
+                <input type="radio" name="grid-size" id="grid-6" value="6" class="peer hidden" />
+                <label for="grid-6" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">6</label>
+              </div>
+              <div>
+                <input type="radio" name="grid-size" id="grid-7" value="7" class="peer hidden" />
+                <label for="grid-7" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">7</label>
+              </div>
+              <div>
+                <input type="radio" name="grid-size" id="grid-8" value="8" class="peer hidden" />
+                <label for="grid-8" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">8</label>
+              </div>
+            </div>
+          </div>
+          <!-- Status Bar -->
+          <div id="status-bar" class="bg-white p-4 rounded shadow">
+            <div id="canvas-status" class="status-item text-lg font-bold p-2 rounded text-center bg-red-200">✗ The canvas is not covered</div>
+            <div id="duplicate-status" class="status-item text-lg font-bold p-2 rounded text-center bg-red-200">✗ Duplicates found</div>
+            <div id="score-status" class="status-item text-lg font-bold p-2 rounded text-center">Score is ...</div>
+          </div>
+          <!-- Achievements -->
+          <div class="bg-white p-4 rounded shadow">
+            <h2 class="text-xl font-semibold mb-2 text-center">Achievements</h2>
+            <div id="achievements-list" class="h-64 overflow-y-auto">
+              <ul id="achievements-items" class="space-y-2"></ul>
+            </div>
+          </div>
+        </div>
+        
+        <!-- Right Column -->
+        <div class="w-full lg:w-1/2 space-y-6 flex flex-col items-center justify-center">
+          <!-- Reset Button -->
+          <div class="text-center">
+            <button id="clear-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+              Reset
+            </button>
+          </div>
+          
+          <!-- Game Area -->
+          <div id="game-container" class="bg-white p-4 rounded shadow flex justify-center items-center">
+            <div id="container"></div>
+          </div>
+        </div>
+      </div>
     </div>
-    <div id="container"></div>
-    <div id="rectangles-list"></div>
-    <script>
-      const numCells = 6;
-      const gridSize = 50;
-      const stageSize = (numCells + 1) * gridSize; // Canvas is 1 cell larger on each side for margin
-
-      const colors = ["blue", "red", "yellow", "white"];
-
-      const stage = new Konva.Stage({
-        container: "container",
-        width: stageSize,
-        height: stageSize,
-      });
-
-      const layer = new Konva.Layer();
-      stage.add(layer);
-
-      const margin = gridSize / 2;
-
-      function drawGrid() {
-        for (let i = 0; i <= numCells; i++) {
-          layer.add(
-            new Konva.Line({
-              points: [
-                margin + i * gridSize,
-                margin,
-                margin + i * gridSize,
-                margin + numCells * gridSize,
-              ],
-              stroke: "lightgray",
-              strokeWidth: 1,
-            })
-          );
-          layer.add(
-            new Konva.Line({
-              points: [
-                margin,
-                margin + i * gridSize,
-                margin + numCells * gridSize,
-                margin + i * gridSize,
-              ],
-              stroke: "lightgray",
-              strokeWidth: 1,
-            })
-          );
-        }
-      }
-
-      drawGrid();
-
-      let isDrawing = false;
-      let startX, startY;
-      let rect, label;
-      let chosenColor;
-
-      function rectanglesOverlap(r1, r2) {
-        return !(
-          r1.x >= r2.x + r2.width - gridSize / 10 ||
-          r1.x + r1.width - gridSize / 10 <= r2.x ||
-          r1.y >= r2.y + r2.height - gridSize / 10 ||
-          r1.y + r1.height - gridSize / 10 <= r2.y
-        );
-      }
-
-      function isOverlapping(newRect) {
-        const rects = layer.find("Rect").filter((r) => r !== newRect);
-        for (let rect of rects) {
-          if (
-            rectanglesOverlap(newRect.getClientRect(), rect.getClientRect())
-          ) {
-            return true;
-          }
-        }
-        return false;
-      }
-
-      function logMessage(message) {
-        console.log(message);
-      }
-
-      function isInsideCanvas(x, y) {
-        return (
-          x >= margin &&
-          x <= stageSize - margin &&
-          y >= margin &&
-          y <= stageSize - margin
-        );
-      }
-
-      let longPressTimeout;
-      const longPressDelay = 500; // 1000 milliseconds = 1 second
-
-      stage.on("mousedown touchstart", (e) => {
-        const pos = stage.getPointerPosition();
-
-        if (!isInsideCanvas(pos.x, pos.y)) {
-          return; // Discard if outside the canvas
-        }
-
-        const clickedShape = layer.getIntersection(pos);
-
-        if (clickedShape) {
-          if (clickedShape.getClassName() === "Text") {
-            target = clickedShape.attrs.rect;
-          } else {
-            target = clickedShape;
-          }
-          if (target.getClassName() === "Rect") {
-            const currentColorIndex = colors.indexOf(target.fill());
-            const nextColorIndex = (currentColorIndex + 1) % colors.length;
-            target.fill(colors[nextColorIndex]);
-            layer.draw();
-            longPressTimeout = setTimeout(() => {
-              target.destroy();
-              target.attrs.label.destroy();
-              layer.draw();
-              updateRectanglesList();
-            }, longPressDelay);
-          }
-        } else {
-          isDrawing = true;
-          startX = Math.floor((pos.x - margin) / gridSize) * gridSize + margin;
-          startY = Math.floor((pos.y - margin) / gridSize) * gridSize + margin;
-          chosenColor = colors[Math.floor(Math.random() * colors.length)];
-          rect = new Konva.Rect({
-            center_x: startX + gridSize / 2,
-            center_y: startY + gridSize / 2,
-            x: startX,
-            y: startY,
-            width: gridSize,
-            height: gridSize,
-            fill: chosenColor,
-            stroke: "black",
-            strokeWidth: 4,
-          });
-          label = new Konva.Text({
-            x: startX,
-            y: startY,
-            text: "1x1",
-            fontSize: 20,
-            fontFamily: "Calibri",
-            fill: "black",
-          });
-          label.position({
-            x: startX + gridSize / 2 - label.width() / 2,
-            y: startY + gridSize / 2 - label.height() / 2,
-          });
-          layer.add(rect);
-          layer.add(label);
-          rect.attrs.label = label;
-          label.attrs.rect = rect;
-        }
-      });
-
-      stage.on("mousemove touchmove", (e) => {
-        if (!isDrawing) return;
-        const pos = stage.getPointerPosition();
-
-        if (!isInsideCanvas(pos.x, pos.y)) {
-          isDrawing = false;
-          rect.destroy();
-          label.destroy();
-          layer.draw();
-          return;
-        }
-
-        let endX, endY;
-
-        if (pos.x < rect.attrs.center_x) {
-          startX = rect.attrs.center_x + gridSize / 2;
-          endX = Math.floor((pos.x - margin) / gridSize) * gridSize + margin;
-        } else {
-          startX = rect.attrs.center_x - gridSize / 2;
-          endX =
-            Math.floor((pos.x - margin) / gridSize) * gridSize +
-            margin +
-            gridSize;
-        }
-
-        if (pos.y < rect.attrs.center_y) {
-          startY = rect.attrs.center_y + gridSize / 2;
-          endY = Math.floor((pos.y - margin) / gridSize) * gridSize + margin;
-        } else {
-          startY = rect.attrs.center_y - gridSize / 2;
-          endY =
-            Math.floor((pos.y - margin) / gridSize) * gridSize +
-            margin +
-            gridSize;
-        }
-
-        let width = endX - startX;
-        let height = endY - startY;
-
-        rect.x(startX);
-        rect.y(startY);
-        rect.width(width);
-        rect.height(height);
-
-        const absWidth = Math.abs(width / gridSize);
-        const absHeight = Math.abs(height / gridSize);
-
-        label.text(`${absWidth}x${absHeight}`);
-        label.position({
-          x: (startX + endX) / 2 - label.width() / 2,
-          y: (startY + endY) / 2 - label.height() / 2,
-        });
-
-        if (isOverlapping(rect)) {
-          rect.fill("black");
-          rect.opacity(0.2);
-        } else {
-          rect.fill(chosenColor);
-          rect.opacity(0.7);
-        }
-
-        layer.draw();
-      });
-
-      stage.on("mouseup touchend", () => {
-        clearTimeout(longPressTimeout);
-        if (!isDrawing) return;
-        isDrawing = false;
-        if (isOverlapping(rect)) {
-          rect.destroy();
-          label.destroy();
-        } else {
-          const width = rect.width() / gridSize;
-          const height = rect.height() / gridSize;
-          logMessage(
-            `Created rectangle: ${width}x${height} = ${width * height}`
-          );
-        }
-        updateRectanglesList();
-        layer.draw();
-      });
-
-      function updateRectanglesList() {
-        const rects = layer.find("Rect");
-        const areas = [];
-        const dimensions = new Set();
-        let duplicatesFound = false;
-
-        rects.forEach((rect) => {
-          const width = Math.abs(rect.width() / gridSize);
-          const height = Math.abs(rect.height() / gridSize);
-          const area = width * height;
-          areas.push(area);
-          if (dimensions.has([width, height].join("x"))) {
-            logMessage("Error: Duplicate dimensions found.");
-            duplicatesFound = true;
-          } else {
-            dimensions.add([width, height].join("x"));
-            dimensions.add([height, width].join("x"));
-          }
-
-          console.log(dimensions);
-        });
-
-        const totalArea = areas.reduce((sum, area) => sum + area, 0);
-        const boardArea = numCells * numCells;
-
-        const canvasStatusElement = document.getElementById("canvas-status");
-        const duplicateStatusElement = document.getElementById("duplicate-status");
-        const scoreStatusElement = document.getElementById("score-status");
-
-        if (totalArea !== boardArea) {
-          logMessage("Error: Total area does not equal board area.");
-          canvasStatusElement.textContent = "✗ The canvas is not covered";
-          canvasStatusElement.classList.remove("valid");
-          canvasStatusElement.classList.add("invalid");
-        } else {
-          canvasStatusElement.textContent = "✓ The whole canvas covered";
-          canvasStatusElement.classList.remove("invalid");
-          canvasStatusElement.classList.add("valid");
-        }
-
-        if (duplicatesFound) {
-          duplicateStatusElement.textContent = "✗ Duplicates found";
-          duplicateStatusElement.classList.remove("valid");
-          duplicateStatusElement.classList.add("invalid");
-        } else {
-          duplicateStatusElement.textContent = "✓ No duplicates found";
-          duplicateStatusElement.classList.remove("invalid");
-          duplicateStatusElement.classList.add("valid");
-        }
-
-        if (!duplicatesFound && totalArea === boardArea) {
-          const score = Math.max(...areas) - Math.min(...areas);
-          logMessage(`Score: ${score}`);
-          scoreStatusElement.textContent = `Score is ${score}`;
-        } else {
-          scoreStatusElement.textContent = "Score is ...";
-        }
-      }
-
-      document.getElementById("clear-button").addEventListener("click", () => {
-        layer.find("Rect").forEach((rect) => rect.destroy());
-        layer.find("Text").forEach((text) => text.destroy());
-        layer.draw();
-        logMessage("Canvas cleared.");
-        updateRectanglesList();
-      });
-
-      // Disable touch scrolling and refreshing
-      document.addEventListener(
-        "touchmove",
-        function (event) {
-          event.preventDefault();
-        },
-        { passive: false }
-      );
-
-      // Prevent double-tap zoom
-      document.addEventListener("dblclick", function (event) {
-        event.preventDefault();
-      });
-
-      layer.draw();
-    </script>
+    <script src="game-logic.js" type="module"></script>
   </body>
 </html>
