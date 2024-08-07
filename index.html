@@ -89,6 +89,16 @@
         font-weight: bold;
         cursor: pointer;
       }
+      .back-link {
+        color: #6B7280;
+        text-decoration: none;
+        display: flex;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+      .back-link:hover {
+        text-decoration: underline;
+      }
     </style>
   </head>
   <body class="bg-gray-100 min-h-screen p-4">
@@ -103,8 +113,13 @@
       <!-- Drawer -->
       <div class="drawer">
         <div class="p-6 space-y-6">
+          <!-- Back Link -->
+          <a href="../" class="back-link">
+            <span class="mr-2">←</span> Back to other puzzles
+          </a>
+          
           <!-- Title -->
-          <h1 class="text-3xl font-bold mb-6">Mondrian Art Puzzle</h1>
+          <h1 class="text-3xl font-bold">Mondrian Art Puzzle</h1>
           
           <!-- Watch Video Button -->
           <button id="watch-video" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
