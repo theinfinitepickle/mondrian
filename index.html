@@ -7,33 +7,20 @@
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-      .drawer {
+      .panel {
         position: fixed;
-        left: -100%;
+        left: 0;
         top: 0;
         height: 100%;
-        width: 100%;
-        max-width: 400px;
+        width: 400px;
         background-color: white;
-        transition: left 0.3s ease-out;
+        transition: transform 0.3s ease-out;
         z-index: 1000;
         overflow-y: auto;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
       }
-      .drawer.open {
-        left: 0;
-      }
-      .drawer-overlay {
-        position: fixed;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-color: rgba(0, 0, 0, 0.5);
-        display: none;
-        z-index: 999;
-      }
-      .drawer-overlay.open {
-        display: block;
+      .panel.collapsed {
+        transform: translateX(-100%);
       }
       #status-bar {
         display: flex;
@@ -99,124 +86,156 @@
       .back-link:hover {
         text-decoration: underline;
       }
+      .collapse-btn {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        cursor: pointer;
+        font-size: 24px;
+      }
+      .expand-btn {
+        position: fixed;
+        top: 10px;
+        left: 10px;
+        cursor: pointer;
+        font-size: 24px;
+        background-color: white;
+        border: 1px solid #e5e7eb;
+        border-radius: 50%;
+        width: 40px;
+        height: 40px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+        z-index: 999;
+      }
+      .main-content {
+        margin-left: 400px;
+        transition: margin-left 0.3s ease-out;
+      }
+      .main-content.expanded {
+        margin-left: 0;
+      }
     </style>
   </head>
-  <body class="bg-gray-100 min-h-screen p-4">
-    <div class="container mx-auto max-w-7xl">
-      <!-- Drawer Toggle Button -->
-      <button id="drawer-toggle" class="fixed top-4 left-4 z-50 bg-blue-500 text-white p-2 rounded-full shadow-lg">
-        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16m-7 6h7"></path>
-        </svg>
-      </button>
+  <body class="bg-gray-100 min-h-screen">
+    <!-- Expand Button -->
+    <button id="expand-btn" class="expand-btn">☰</button>
 
-      <!-- Drawer -->
-      <div class="drawer">
-        <div class="p-6 space-y-6">
-          <!-- Back Link -->
-          <a href="../" class="back-link">
-            <span class="mr-2">←</span> Back to other puzzles
-          </a>
-          
-          <!-- Title -->
-          <h1 class="text-3xl font-bold">Mondrian Art Puzzle</h1>
-          
-          <!-- Watch Video Button -->
-          <button id="watch-video" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
-            Watch Instructional Video
-          </button>
+    <!-- Collapsible Panel -->
+    <div id="panel" class="panel">
+      <div class="p-6 space-y-6">
+        <!-- Collapse Button -->
+        <span id="collapse-btn" class="collapse-btn">&times;</span>
+        
+        <!-- Back Link -->
+        <a href="../" class="back-link">
+          <span class="mr-2">←</span> Back to other puzzles
+        </a>
+        
+        <!-- Title -->
+        <h1 class="text-3xl font-bold">Mondrian Art Puzzle</h1>
+        
+        <!-- Watch Video Button -->
+        <button id="watch-video" class="w-full bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
+          Watch Instructional Video
+        </button>
 
-          <!-- N Selection -->
-          <div class="bg-white rounded shadow p-4">
-            <h2 class="font-semibold mb-2">Select Grid Size (N)</h2>
-            <div class="grid grid-cols-5 gap-2 rounded-xl bg-gray-200 p-2">
-              <div>
-                <input type="radio" name="grid-size" id="grid-4" value="4" class="peer hidden" checked />
-                <label for="grid-4" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">4</label>
-              </div>
-              <div>
-                <input type="radio" name="grid-size" id="grid-5" value="5" class="peer hidden" />
-                <label for="grid-5" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">5</label>
-              </div>
-              <div>
-                <input type="radio" name="grid-size" id="grid-6" value="6" class="peer hidden" />
-                <label for="grid-6" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">6</label>
-              </div>
-              <div>
-                <input type="radio" name="grid-size" id="grid-7" value="7" class="peer hidden" />
-                <label for="grid-7" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">7</label>
-              </div>
-              <div>
-                <input type="radio" name="grid-size" id="grid-8" value="8" class="peer hidden" />
-                <label for="grid-8" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">8</label>
-              </div>
+        <!-- N Selection -->
+        <div class="bg-white rounded shadow p-4">
+          <h2 class="font-semibold mb-2">Select Grid Size (N)</h2>
+          <div class="grid grid-cols-5 gap-2 rounded-xl bg-gray-200 p-2">
+            <div>
+              <input type="radio" name="grid-size" id="grid-4" value="4" class="peer hidden" checked />
+              <label for="grid-4" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">4</label>
             </div>
-          </div>
-          
-          <!-- Status Bar -->
-          <div class="bg-white rounded shadow p-4">
-            <h2 class="font-semibold mb-2">Status</h2>
-            <div id="status-bar">
-              <div id="canvas-status" class="status-item text-sm font-bold p-2 rounded bg-red-200">✗ The canvas is not covered</div>
-              <div id="duplicate-status" class="status-item text-sm font-bold p-2 rounded bg-red-200">✗ Duplicates found</div>
+            <div>
+              <input type="radio" name="grid-size" id="grid-5" value="5" class="peer hidden" />
+              <label for="grid-5" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">5</label>
             </div>
-          </div>
-          
-          <!-- Achievements -->
-          <div class="bg-white rounded shadow p-4">
-            <h2 class="font-semibold mb-2">Achievements</h2>
-            <div id="achievements-list" class="h-48 overflow-y-auto">
-              <ul id="achievements-items" class="space-y-2"></ul>
+            <div>
+              <input type="radio" name="grid-size" id="grid-6" value="6" class="peer hidden" />
+              <label for="grid-6" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">6</label>
+            </div>
+            <div>
+              <input type="radio" name="grid-size" id="grid-7" value="7" class="peer hidden" />
+              <label for="grid-7" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">7</label>
+            </div>
+            <div>
+              <input type="radio" name="grid-size" id="grid-8" value="8" class="peer hidden" />
+              <label for="grid-8" class="block cursor-pointer select-none rounded-xl p-2 text-center peer-checked:bg-blue-500 peer-checked:font-bold peer-checked:text-white">8</label>
             </div>
           </div>
         </div>
-      </div>
-
-      <!-- Drawer Overlay -->
-      <div class="drawer-overlay"></div>
-
-      <!-- Lightbox -->
-      <div id="video-lightbox" class="lightbox">
-        <div class="lightbox-content">
-          <span class="close">&times;</span>
-          <div class="video-container">
-            <iframe src="https://www.youtube.com/embed/49KvZrioFB0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        
+        <!-- Status Bar -->
+        <div class="bg-white rounded shadow p-4">
+          <h2 class="font-semibold mb-2">Status</h2>
+          <div id="status-bar">
+            <div id="canvas-status" class="status-item text-sm font-bold p-2 rounded bg-red-200">✗ The canvas is not covered</div>
+            <div id="duplicate-status" class="status-item text-sm font-bold p-2 rounded bg-red-200">✗ Duplicates found</div>
           </div>
         </div>
-      </div>
-
-      <!-- Main Content -->
-      <div class="flex justify-center items-center min-h-screen">
-        <div class="space-y-6 flex flex-col items-center justify-center">
-          <!-- Game Controls -->
-          <div class="flex items-center space-x-4">
-            <!-- Score -->
-            <div id="score-status" class="text-lg font-bold p-2 rounded text-center bg-yellow-200">Score: 0</div>
-            <!-- Reset Button -->
-            <button id="clear-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
-              Reset
-            </button>
-          </div>
-          
-          <!-- Game Area -->
-          <div id="game-container" class="bg-white p-4 rounded shadow flex justify-center items-center">
-            <div id="container"></div>
+        
+        <!-- Achievements -->
+        <div class="bg-white rounded shadow p-4">
+          <h2 class="font-semibold mb-2">Achievements</h2>
+          <div id="achievements-list" class="h-48 overflow-y-auto">
+            <ul id="achievements-items" class="space-y-2"></ul>
           </div>
         </div>
       </div>
     </div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="main-content p-4">
+      <div class="container mx-auto max-w-7xl">
+        <div class="flex justify-center items-center min-h-screen">
+          <div class="space-y-6 flex flex-col items-center justify-center">
+            <!-- Game Controls -->
+            <div class="flex items-center space-x-4">
+              <!-- Score -->
+              <div id="score-status" class="text-lg font-bold p-2 rounded text-center bg-yellow-200">Score: 0</div>
+              <!-- Reset Button -->
+              <button id="clear-button" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                Reset
+              </button>
+            </div>
+            
+            <!-- Game Area -->
+            <div id="game-container" class="bg-white p-4 rounded shadow flex justify-center items-center">
+              <div id="container"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Lightbox -->
+    <div id="video-lightbox" class="lightbox">
+      <div class="lightbox-content">
+        <span class="close">&times;</span>
+        <div class="video-container">
+          <iframe src="https://www.youtube.com/embed/49KvZrioFB0" frameborder="0" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+        </div>
+      </div>
+    </div>
+
     <script src="game-logic.js" type="module"></script>
     <script>
-      const drawerToggle = document.getElementById('drawer-toggle');
-      const drawer = document.querySelector('.drawer');
-      const drawerOverlay = document.querySelector('.drawer-overlay');
+      const panel = document.getElementById('panel');
+      const collapseBtn = document.getElementById('collapse-btn');
+      const expandBtn = document.getElementById('expand-btn');
+      const mainContent = document.getElementById('main-content');
       const watchVideoBtn = document.getElementById('watch-video');
       const videoLightbox = document.getElementById('video-lightbox');
       const closeLightbox = videoLightbox.querySelector('.close');
 
-      function toggleDrawer() {
-        drawer.classList.toggle('open');
-        drawerOverlay.classList.toggle('open');
+      function togglePanel() {
+        panel.classList.toggle('collapsed');
+        mainContent.classList.toggle('expanded');
+        expandBtn.style.display = panel.classList.contains('collapsed') ? 'flex' : 'none';
       }
 
       function openLightbox() {
@@ -230,8 +249,8 @@
         iframe.src = iframe.src;
       }
 
-      drawerToggle.addEventListener('click', toggleDrawer);
-      drawerOverlay.addEventListener('click', toggleDrawer);
+      collapseBtn.addEventListener('click', togglePanel);
+      expandBtn.addEventListener('click', togglePanel);
       watchVideoBtn.addEventListener('click', openLightbox);
       closeLightbox.addEventListener('click', closeLightboxFunc);
       
@@ -241,6 +260,9 @@
           closeLightboxFunc();
         }
       });
+
+      // Initially hide the expand button
+      expandBtn.style.display = 'none';
     </script>
   </body>
 </html>
