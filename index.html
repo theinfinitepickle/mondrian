@@ -144,7 +144,7 @@
 
         <!-- N Selection -->
         <div class="bg-white rounded shadow p-4">
-          <h2 class="font-semibold mb-2">Select Grid Size (N)</h2>
+          <h2 class="font-semibold mb-2">Select Grid Size</h2>
           <div class="grid grid-cols-5 gap-2 rounded-xl bg-gray-200 p-2">
             <div>
               <input type="radio" name="grid-size" id="grid-4" value="4" class="peer hidden" checked />
@@ -171,7 +171,7 @@
         
         <!-- Status Bar -->
         <div class="bg-white rounded shadow p-4">
-          <h2 class="font-semibold mb-2">Status</h2>
+          <!-- <h2 class="font-semibold mb-2">Status</h2> -->
           <div id="status-bar">
             <div id="canvas-status" class="status-item text-sm font-bold p-2 rounded bg-red-200">✗ The canvas is not covered</div>
             <div id="duplicate-status" class="status-item text-sm font-bold p-2 rounded bg-red-200">✗ Duplicates found</div>
@@ -182,7 +182,8 @@
         <div class="bg-white rounded shadow p-4">
           <h2 class="font-semibold mb-2">Achievements</h2>
           <div id="achievements-list" class="h-48 overflow-y-auto">
-            <ul id="achievements-items" class="space-y-2"></ul>
+            <ul id="achievements-items" class="space-y-2 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            </ul>            
           </div>
         </div>
       </div>

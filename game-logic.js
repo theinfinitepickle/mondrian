@@ -1,32 +1,16 @@
-const getAchievements = (N) => {
-  const baseAchievements = [
-    { id: 'full_canvas', description: 'Cover the entire canvas', completed: false },
-    { id: 'no_duplicates', description: 'No duplicate rectangle sizes', completed: false },
-   ];
-
-  const sizeSpecificAchievements = {
-    6: [
-      { id: 'max_rectangles', description: 'Use the maximum number of rectangles (36)', completed: false },
-      { id: 'min_rectangles', description: 'Use the minimum number of rectangles (1)', completed: false },
-      { id: 'score_under_10', description: 'Achieve a score under 10', completed: false },
-    ],
-    // Add more size-specific achievements for different N values here
-  };
-
-  return [...baseAchievements, ...(sizeSpecificAchievements[N] || [])];
-};
-
-let numCells = 7; // Default to 4x4 grid
+let numCells = 4; // Default to 4x4 grid
 let gameArea = window.innerWidth < 600 ? 400 : 600;
 let gridSize = Math.round(gameArea / (numCells + 1));
 let halfGridSize = Math.round(gridSize / 2);
-let stageSize = (numCells + 1) * gridSize;
 const margin = 30;// Math.round(halfGridSize);
-console.log(gridSize);
+let stageSize = numCells * gridSize + 2 * margin;
+
+let achievements = [];
+
 
 const colors = ["blue", "red", "yellow", "white"];
 
-let stage, layer, achievements;
+let stage, layer;
 let isDrawing = false;
 let startX, startY;
 let rect, label;
@@ -41,7 +25,7 @@ function initGame() {
   }
 
   // Recalculate stage size based on current numCells
-  stageSize = (numCells + 1) * gridSize;
+  stageSize = numCells * gridSize + 2 * margin;
 
   stage = new Konva.Stage({
     container: "container",
@@ -51,8 +35,6 @@ function initGame() {
 
   layer = new Konva.Layer();
   stage.add(layer);
-
-  achievements = getAchievements(numCells);
 
   // Set the width of the status bar and game container to match the canvas width
   document.getElementById('game-container').style.width = `${stageSize}px`;
@@ -67,13 +49,6 @@ function initGame() {
 function initializeAchievements() {
   const achievementsList = document.getElementById('achievements-items');
   achievementsList.innerHTML = ''; // Clear existing achievements
-  achievements.forEach(achievement => {
-    const li = document.createElement('li');
-    li.id = `achievement-${achievement.id}`;
-    li.className = 'mb-1 p-1 rounded';
-    li.textContent = achievement.description;
-    achievementsList.appendChild(li);
-  });
 }
 
 function drawGrid() {
@@ -326,31 +301,52 @@ function updateRectanglesList() {
   updateStatusText(duplicateStatusElement, noDuplicates ? "✓ No duplicates" : "✗ Duplicates found", noDuplicates ? "bg-green-200" : "bg-red-200", noDuplicates ? "bg-red-200" : "bg-green-200");
   updateStatusText(scoreStatusElement, score !== null ? `Score is ${score}` : "Score is ...");
 
-  // Update achievements
-  updateAchievement('full_canvas', canvasCovered);
-  updateAchievement('no_duplicates', noDuplicates);
-  updateAchievement('all_colors', allColorsUsed);
-  updateAchievement('single_color', singleColorUsed);
-  updateAchievement('max_rectangles', rects.length === numCells * numCells);
-  updateAchievement('min_rectangles', rects.length === 1);
-  updateAchievement('score_under_10', score !== null && score < 10);
+  if (canvasCovered && noDuplicates) {
+    const solution = rects.map(rect => ({
+      x: rect.x(),
+      y: rect.y(),
+      width: rect.width(),
+      height: rect.height(),
+      color: rect.fill()
+    }));
+
+    const achievement = [numCells, score, solution];
+
+    if (!achievements.some(([n, s]) => n === numCells && s === score)) {
+      achievements.push(achievement);
+      updateAchievementsList();
+    }
+  }
+
+  console.log("Achievements:", achievements);
 }
+
+function updateAchievementsList() {
+  const achievementsList = document.getElementById('achievements-items');
+  achievementsList.innerHTML = ''; // Clear existing list
+
+  // Filter and sort achievements by score for the current N
+  const uniqueAchievements = achievements
+    .filter(([n]) => n === numCells) // Filter by current N
+    .map(([n, score]) => score) // Extract only the score
+    .sort((a, b) => a - b); // Sort by score (smallest to largest)
+
+  // Populate the achievements list with the sorted scores
+  uniqueAchievements.forEach((score) => {
+    const tile = document.createElement('div');
+    tile.className = 'p-4 bg-gray-100 rounded-lg text-center';
+    tile.textContent = score;
+    achievementsList.appendChild(tile);
+  });
+}
+
+
+
 
 function updateStatusText(element, text, addClass = null, removeClass = null) {
   element.textContent = text;
   if (addClass) element.classList.add(addClass);
   if (removeClass) element.classList.remove(removeClass);
-}
-
-function updateAchievement(id, completed) {
-  const achievement = achievements.find(a => a.id === id);
-  if (achievement && achievement.completed !== completed) {
-    achievement.completed = completed;
-    const element = document.getElementById(`achievement-${id}`);
-    if (element) {
-      element.classList.toggle('bg-green-200', completed);
-    }
-  }
 }
 
 function logMessage(message) {
