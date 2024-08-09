@@ -56,6 +56,19 @@ function saveAchievements() {
   localStorage.setItem('achievements', JSON.stringify(achievements));
 }
 
+document.getElementById('reset-achievements-link').addEventListener('click', function(event) {
+  event.preventDefault(); // Prevent the default link behavior
+
+  if (confirm('Are you sure you want to reset your achievements?')) {
+    localStorage.removeItem('achievements'); // Remove achievements from Local Storage
+    alert('Achievements have been reset.');
+    
+    // Optionally reload the page or update the UI
+    loadAchievements(); // Reload the achievements (which should now be empty)
+    updateAchievementsList(); // Update the UI to reflect the reset
+  }
+});
+
 // Load achievements from Local Storage
 function loadAchievements() {
   const storedAchievements = localStorage.getItem('achievements');
