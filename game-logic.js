@@ -51,6 +51,19 @@ function initializeAchievements() {
   achievementsList.innerHTML = ''; // Clear existing achievements
 }
 
+// Save achievements to Local Storage
+function saveAchievements() {
+  localStorage.setItem('achievements', JSON.stringify(achievements));
+}
+
+// Load achievements from Local Storage
+function loadAchievements() {
+  const storedAchievements = localStorage.getItem('achievements');
+  if (storedAchievements) {
+    achievements = JSON.parse(storedAchievements);
+  }
+}
+
 function drawGrid() {
   for (let i = 0; i <= numCells; i++) {
     layer.add(
@@ -315,6 +328,7 @@ function updateRectanglesList() {
     if (!achievements.some(([n, s]) => n === numCells && s === score)) {
       achievements.push(achievement);
       updateAchievementsList();
+      saveAchievements();
     }
   }
 
@@ -334,14 +348,11 @@ function updateAchievementsList() {
   // Populate the achievements list with the sorted scores
   uniqueAchievements.forEach((score) => {
     const tile = document.createElement('div');
-    tile.className = 'p-4 bg-gray-100 rounded-lg text-center';
+    tile.className = 'p-4 bg-gray-100 rounded-full text-center w-16 h-16 flex items-center justify-center';
     tile.textContent = score;
     achievementsList.appendChild(tile);
   });
 }
-
-
-
 
 function updateStatusText(element, text, addClass = null, removeClass = null) {
   element.textContent = text;
@@ -388,3 +399,6 @@ document.addEventListener("dblclick", function (event) {
 
 // Initialize the game
 initGame();
+// Call this function when the app initializes
+loadAchievements();
+updateAchievementsList();
