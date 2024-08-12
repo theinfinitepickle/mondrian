@@ -1,5 +1,5 @@
 let numCells = 4; // Default to 4x4 grid
-let gameArea = window.innerWidth < 600 ? 400 : 600;
+let gameArea = Math.min(Math.floor(window.innerWidth - 100), 500);
 let gridSize = Math.round(gameArea / (numCells + 1));
 let halfGridSize = Math.round(gridSize / 2);
 const margin = 30;// Math.round(halfGridSize);
