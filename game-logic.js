@@ -1,5 +1,5 @@
 let numCells = 4; // Default to 4x4 grid
-let gameArea = Math.min(Math.floor(window.innerWidth - 100), 500);
+let gameArea = Math.min(Math.floor(window.innerWidth - 50), 500);
 let gridSize = Math.round(gameArea / (numCells + 1));
 let halfGridSize = Math.round(gridSize / 2);
 const margin = 30;// Math.round(halfGridSize);
@@ -68,6 +68,67 @@ document.getElementById('reset-achievements-link').addEventListener('click', fun
     updateAchievementsList(); // Update the UI to reflect the reset
   }
 });
+
+function reproduceAchievement(achievement) {
+  // Extract data from the achievement
+  const [achievementNumCells, achievementScore, solution] = achievement;
+
+  // Set the number of cells
+  numCells = achievementNumCells;
+  
+  // Recalculate game area and grid size
+  gameArea = Math.min(Math.floor(window.innerWidth - 50), 500);
+  gridSize = Math.round(gameArea / (numCells + 1));
+  halfGridSize = Math.round(gridSize / 2);
+  stageSize = numCells * gridSize + 2 * margin;
+
+  // Reinitialize the game with the new number of cells
+  // initGame();
+
+  // Clear the current board using the existing functionality
+  document.getElementById("clear-button").click();
+
+  // Reproduce each rectangle from the solution
+  solution.forEach((rect) => {
+    const newRect = new Konva.Rect({
+      x: rect.x,
+      y: rect.y,
+      width: rect.width,
+      height: rect.height,
+      fill: rect.color,
+      stroke: "black",
+      strokeWidth: 4,
+      opacity: 0.7,
+    });
+
+    const label = new Konva.Text({
+      x: rect.x,
+      y: rect.y,
+      text: `${Math.abs(rect.width) / gridSize}x${Math.abs(rect.height) / gridSize}`,
+      fontSize: 20,
+      fontFamily: "Calibri",
+      fill: "black",
+    });
+
+    label.position({
+      x: rect.x + rect.width / 2 - label.width() / 2,
+      y: rect.y + rect.height / 2 - label.height() / 2,
+    });
+
+    layer.add(newRect);
+    layer.add(label);
+    newRect.attrs.label = label;
+    label.attrs.rect = newRect;
+  });
+
+  // Redraw the layer
+  layer.draw();
+
+  // Update the rectangles list and achievements
+  updateRectanglesList();
+
+  console.log(`Reproduced achievement: ${achievementNumCells}x${achievementNumCells} grid with score ${achievementScore}`);
+}
 
 // Load achievements from Local Storage
 function loadAchievements() {
@@ -160,6 +221,7 @@ function handleMouseDown(e) {
       fill: chosenColor,
       stroke: "black",
       strokeWidth: 4,
+      opacity: 0.7,
     });
     label = new Konva.Text({
       x: startX,
@@ -170,8 +232,8 @@ function handleMouseDown(e) {
       fill: "black",
     });
     label.position({
-      x: startX + halfGridSize - label.width() / 2,
-      y: startY + halfGridSize - label.height() / 2,
+      x: startX + gridSize / 2 - label.width() / 2,
+      y: startY + gridSize / 2 - label.height() / 2,
     });
     layer.add(rect);
     layer.add(label);
@@ -352,18 +414,19 @@ function updateAchievementsList() {
   const achievementsList = document.getElementById('achievements-items');
   achievementsList.innerHTML = ''; // Clear existing list
 
-  // Filter and sort achievements by score for the current N
-  const uniqueAchievements = achievements
+  // Filter achievements for the current N and sort by score
+  const currentAchievements = achievements
     .filter(([n]) => n === numCells) // Filter by current N
-    .map(([n, score]) => score) // Extract only the score
-    .sort((a, b) => a - b); // Sort by score (smallest to largest)
+    .sort((a, b) => a[1] - b[1]); // Sort by score (smallest to largest)
 
-  // Populate the achievements list with the sorted scores
-  uniqueAchievements.forEach((score) => {
-    const tile = document.createElement('div');
-    // tile.className = 'p-4 bg-gray-100 rounded-full text-center w-16 h-16 flex items-center justify-center';
-    tile.textContent = score;
-    achievementsList.appendChild(tile);
+  // Populate the achievements list with the sorted achievements
+  currentAchievements.forEach(achievement => {
+    const [n, score, solution] = achievement;
+    const button = document.createElement('button');
+    button.textContent = `${score}`;
+    button.className = 'achievement-button';
+    button.onclick = () => reproduceAchievement(achievement);
+    achievementsList.appendChild(button);
   });
 }
 
@@ -384,6 +447,7 @@ document.querySelectorAll('input[name="grid-size"]').forEach(radio => {
     gridSize = Math.round(gameArea / (numCells + 1));
     console.log(numCells, gridSize);
     initGame();
+    updateAchievementsList();
   });
 });
 
