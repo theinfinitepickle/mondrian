@@ -515,7 +515,7 @@ function createSVGPreview(gridSize, solution) {
     svgRect.setAttribute("height", rect.height * cellSize);
     svgRect.setAttribute("fill", rect.color);
     svgRect.setAttribute("stroke", "black");
-    svgRect.setAttribute("stroke-width", "1");
+    svgRect.setAttribute("stroke-width", "5");
     svg.appendChild(svgRect);
   });
 
