@@ -64,8 +64,11 @@ document.getElementById('reset-achievements-link').addEventListener('click', fun
     alert('Achievements have been reset.');
     
     // Optionally reload the page or update the UI
+    achievements = [];
     loadAchievements(); // Reload the achievements (which should now be empty)
     updateAchievementsList(); // Update the UI to reflect the reset
+    updateDetailedLogTable();
+    document.getElementById("clear-button").click();
   }
 });
 
