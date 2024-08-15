@@ -157,6 +157,27 @@
         display: flex;
         justify-content: center;
       }
+      #detailed-log-link {
+        display: block;
+        margin-top: 0.5rem;
+        color: var(--primary);
+        text-decoration: none;
+      }
+      #detailed-log-link:hover {
+        text-decoration: underline;
+      }
+      #detailed-log-modal table {
+        width: 100%;
+        border-collapse: collapse;
+      }
+      #detailed-log-modal th, #detailed-log-modal td {
+        border: 1px solid var(--secondary);
+        padding: 0.5rem;
+        text-align: left;
+      }
+      #detailed-log-modal th {
+        background-color: var(--secondary-focus);
+      }
     </style>
   </head>
   <body>
@@ -195,11 +216,11 @@
         </div>
 
         <div class="drawer-section">
-          <h5>Achievements</h5>
+          <h5>Creation log</h5>
           <div id="achievements-list" style="max-height: 200px; overflow-y: auto;">
             <div id="achievements-items"></div>
           </div>
-          <a href="#" id="reset-achievements-link">Reset achievements</a>
+          <a href="#" id="detailed-log-link">Detailed log</a>
         </div>
       </div>
     </aside>
@@ -228,6 +249,29 @@
       </article>
     </dialog>
 
+    <dialog id="detailed-log-modal">
+      <article>
+        <header>
+          <h3>Detailed Creation Log</h3>
+          <button id="close-detailed-log-modal-btn" aria-label="Close">×</button>
+        </header>
+        <table>
+          <thead>
+            <tr>
+              <th>Board size</th>
+              <th>Score</th>
+              <th>Date</th>
+              <th>Load</th>
+            </tr>
+          </thead>
+          <tbody id="detailed-log-table-body">
+            <!-- This will be populated dynamically -->
+          </tbody>
+        </table>
+        <a href="#" id="reset-achievements-link">Reset achievements</a>
+      </article>
+    </dialog>
+
     <script src="game-logic.js" type="module"></script>
     <script>
       const panel = document.getElementById('panel');
@@ -237,6 +281,9 @@
       const watchVideoBtn = document.getElementById('watch-video');
       const videoModal = document.getElementById('video-modal');
       const closeModalBtn = document.getElementById('close-modal-btn');
+      const detailedLogLink = document.getElementById('detailed-log-link');
+      const detailedLogModal = document.getElementById('detailed-log-modal');
+      const closeDetailedLogModalBtn = document.getElementById('close-detailed-log-modal-btn');
 
       function togglePanel() {
         panel.classList.toggle('collapsed');
@@ -257,10 +304,22 @@
         iframe.src = iframe.src;
       }
 
+      function openDetailedLogModal() {
+        detailedLogModal.showModal();
+        // You'll need to implement a function to populate the table
+      }
+
+      function closeDetailedLogModal() {
+        detailedLogModal.close();
+      }
+
+
       collapseBtn.addEventListener('click', togglePanel);
       expandBtn.addEventListener('click', togglePanel);
       watchVideoBtn.addEventListener('click', openModal);
       closeModalBtn.addEventListener('click', closeModal);
+      detailedLogLink.addEventListener('click', openDetailedLogModal);
+      closeDetailedLogModalBtn.addEventListener('click', closeDetailedLogModal);
 
       expandBtn.style.display = 'none';
 

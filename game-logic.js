@@ -91,10 +91,10 @@ function reproduceAchievement(achievement) {
   // Reproduce each rectangle from the solution
   solution.forEach((rect) => {
     const newRect = new Konva.Rect({
-      x: rect.x,
-      y: rect.y,
-      width: rect.width,
-      height: rect.height,
+      x: rect.x * gridSize + margin,
+      y: rect.y * gridSize + margin,
+      width: rect.width * gridSize ,
+      height: rect.height * gridSize ,
       fill: rect.color,
       stroke: "black",
       strokeWidth: 4,
@@ -102,17 +102,17 @@ function reproduceAchievement(achievement) {
     });
 
     const label = new Konva.Text({
-      x: rect.x,
-      y: rect.y,
-      text: `${Math.abs(rect.width) / gridSize}x${Math.abs(rect.height) / gridSize}`,
+      x: 0,
+      y: 0,
+      text: `${Math.abs(rect.width)}x${Math.abs(rect.height)}`,
       fontSize: 20,
       fontFamily: "Calibri",
       fill: "black",
     });
 
     label.position({
-      x: rect.x + rect.width / 2 - label.width() / 2,
-      y: rect.y + rect.height / 2 - label.height() / 2,
+      x: rect.x * gridSize + margin + rect.width * gridSize / 2 - label.width() / 2,
+      y: rect.y * gridSize + margin + rect.height * gridSize / 2 - label.height() / 2,
     });
 
     layer.add(newRect);
@@ -390,17 +390,37 @@ function updateRectanglesList() {
   updateStatusText(scoreStatusElement, score !== null ? `Score is ${score}` : "Score is ...");
 
   if (canvasCovered && noDuplicates) {
-    const solution = rects.map(rect => ({
-      x: rect.x(),
-      y: rect.y(),
-      width: rect.width(),
-      height: rect.height(),
-      color: rect.fill()
-    }));
+    const solution = rects.map(rect => {
+      let x = (rect.x() - margin) / gridSize;
+      let y = (rect.y() - margin) / gridSize;
+      let width = rect.width() / gridSize;
+      let height = rect.height() / gridSize;
+    
+      // Handle negative width
+      if (width < 0) {
+        x += width;
+        width = Math.abs(width);
+      }
+    
+      // Handle negative height
+      if (height < 0) {
+        y += height;
+        height = Math.abs(height);
+      }
+    
+      return {
+        x,
+        y,
+        width,
+        height,
+        color: rect.fill()
+      };
+    });
 
-    const achievement = [numCells, score, solution];
+    const timestamp = new Date().toISOString();
+    const achievement = [numCells, score, solution, timestamp];
 
-    if (!achievements.some(([n, s]) => n === numCells && s === score)) {
+    if (!achievements.some(([n, s, ]) => n === numCells && s === score)) {
       achievements.push(achievement);
       updateAchievementsList();
       saveAchievements();
@@ -416,18 +436,90 @@ function updateAchievementsList() {
 
   // Filter achievements for the current N and sort by score
   const currentAchievements = achievements
-    .filter(([n]) => n === numCells) // Filter by current N
-    .sort((a, b) => a[1] - b[1]); // Sort by score (smallest to largest)
+     .filter(([n]) => n === numCells) // Filter by current N
+    // .sort((a, b) => a[1] - b[1]); // Sort by score (smallest to largest)
 
   // Populate the achievements list with the sorted achievements
   currentAchievements.forEach(achievement => {
-    const [n, score, solution] = achievement;
+    const [n, score, solution, timestamp] = achievement;
     const button = document.createElement('button');
     button.textContent = `${score}`;
     button.className = 'achievement-button';
     button.onclick = () => reproduceAchievement(achievement);
     achievementsList.appendChild(button);
   });
+  // Update the detailed log table
+  updateDetailedLogTable();
+}
+
+function updateDetailedLogTable() {
+  const tableBody = document.getElementById('detailed-log-table-body');
+  
+  // Clear existing rows
+  while (tableBody.firstChild) {
+    tableBody.removeChild(tableBody.firstChild);
+  }
+
+  // Create a document fragment to hold the new rows
+  const fragment = document.createDocumentFragment();
+
+  // Sort achievements by timestamp (most recent first)
+  const sortedAchievements = achievements.sort((a, b) => new Date(b[3]) - new Date(a[3]));
+
+  sortedAchievements.forEach(achievement => {
+    const [n, score, solution, timestamp] = achievement;
+    
+    const row = document.createElement('tr');
+    
+    const achievementCell = document.createElement('td');
+    achievementCell.textContent = `${n}`;
+    row.appendChild(achievementCell);
+    
+    const descriptionCell = document.createElement('td');
+    descriptionCell.textContent = `${score}`;
+    row.appendChild(descriptionCell);
+    
+    const dateCell = document.createElement('td');
+    dateCell.textContent = new Date(timestamp).toLocaleString();
+    row.appendChild(dateCell);
+
+    const loadCell = document.createElement('td');    
+    const svg = createSVGPreview(n, solution);
+    svg.onclick = () => reproduceAchievement(achievement);
+    loadCell.appendChild(svg);
+    row.appendChild(loadCell);
+
+    console.log(row);
+
+    fragment.appendChild(row);
+  });
+
+  // Append the fragment to the table body
+  tableBody.appendChild(fragment);
+}
+
+function createSVGPreview(gridSize, solution) {
+  const svgSize = 100; // Size of the SVG preview
+  const cellSize = svgSize / gridSize;
+
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.setAttribute("width", svgSize);
+  svg.setAttribute("height", svgSize);
+  svg.setAttribute("viewBox", `0 0 ${svgSize} ${svgSize}`);
+
+  solution.forEach(rect => {
+    const svgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
+    svgRect.setAttribute("x", rect.x * cellSize);
+    svgRect.setAttribute("y", rect.y * cellSize);
+    svgRect.setAttribute("width", rect.width * cellSize);
+    svgRect.setAttribute("height", rect.height * cellSize);
+    svgRect.setAttribute("fill", rect.color);
+    svgRect.setAttribute("stroke", "black");
+    svgRect.setAttribute("stroke-width", "1");
+    svg.appendChild(svgRect);
+  });
+
+  return svg;
 }
 
 function updateStatusText(element, text, addClass = null, removeClass = null) {
