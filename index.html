@@ -209,24 +209,33 @@
         </div>
 
         <div class="drawer-section">
-          <div id="status-bar">
-            <div id="canvas-status" class="status-item">✗ The canvas is not covered</div>
-            <div id="duplicate-status" class="status-item">✗ Duplicates found</div>
-          </div>
-        </div>
-
-        <div class="drawer-section">
-          <h5>Creation log</h5>
-          <div id="achievements-list" style="max-height: 200px; overflow-y: auto;">
-            <div id="achievements-items"></div>
-          </div>
-          <a href="#" id="detailed-log-link">Detailed log</a>
+          <h4>
+            Creation log
+          </h4>
+          <table>
+            <thead>
+              <tr>
+                <!-- <th>Board size</th> -->
+                <th>Score</th>
+                <!-- <th>Date</th> -->
+                <th>Load</th>
+              </tr>
+            </thead>
+            <tbody id="detailed-log-table-body">
+              <!-- This will be populated dynamically -->
+            </tbody>
+          </table>
+          <a href="#" id="reset-achievements-link">Reset achievements</a>
         </div>
       </div>
     </aside>
 
     <div id="main-content-wrapper">
       <main id="main-content">
+        <div id="status-bar">
+          <div id="canvas-status" class="status-item">✗ The canvas is not covered</div>
+          <div id="duplicate-status" class="status-item">✗ Duplicates found</div>
+        </div>
         <div id="game-controls">
           <div id="score-status">Score: 0</div>
           <button id="clear-button">Reset</button>
@@ -251,24 +260,6 @@
 
     <dialog id="detailed-log-modal">
       <article>
-        <header>
-          <h3>Detailed Creation Log</h3>
-          <button id="close-detailed-log-modal-btn" aria-label="Close">×</button>
-        </header>
-        <table>
-          <thead>
-            <tr>
-              <th>Board size</th>
-              <th>Score</th>
-              <th>Date</th>
-              <th>Load</th>
-            </tr>
-          </thead>
-          <tbody id="detailed-log-table-body">
-            <!-- This will be populated dynamically -->
-          </tbody>
-        </table>
-        <a href="#" id="reset-achievements-link">Reset achievements</a>
       </article>
     </dialog>
 
@@ -318,9 +309,6 @@
       expandBtn.addEventListener('click', togglePanel);
       watchVideoBtn.addEventListener('click', openModal);
       closeModalBtn.addEventListener('click', closeModal);
-      detailedLogLink.addEventListener('click', openDetailedLogModal);
-      closeDetailedLogModalBtn.addEventListener('click', closeDetailedLogModal);
-
       expandBtn.style.display = 'none';
 
       // Add resize event listener to recenter the game area

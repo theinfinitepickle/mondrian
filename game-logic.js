@@ -1,5 +1,5 @@
 let numCells = 4; // Default to 4x4 grid
-let gameArea = Math.min(Math.floor(window.innerWidth - 50), 500);
+let gameArea = Math.min(Math.floor(window.innerWidth - 75), 500);
 let gridSize = Math.round(gameArea / (numCells + 1));
 let halfGridSize = Math.round(gridSize / 2);
 const margin = 30;// Math.round(halfGridSize);
@@ -39,16 +39,10 @@ function initGame() {
   // Set the width of the status bar and game container to match the canvas width
   document.getElementById('game-container').style.width = `${stageSize}px`;
 
-  initializeAchievements();
   drawGrid();
   setupEventListeners();
   
   layer.draw();
-}
-
-function initializeAchievements() {
-  const achievementsList = document.getElementById('achievements-items');
-  achievementsList.innerHTML = ''; // Clear existing achievements
 }
 
 // Save achievements to Local Storage
@@ -67,7 +61,6 @@ document.getElementById('reset-achievements-link').addEventListener('click', fun
     achievements = [];
     loadAchievements(); // Reload the achievements (which should now be empty)
     updateAchievementsList(); // Update the UI to reflect the reset
-    updateDetailedLogTable();
     document.getElementById("clear-button").click();
   }
 });
@@ -422,8 +415,8 @@ function updateRectanglesList() {
 
     const timestamp = new Date().toISOString();
     const achievement = [numCells, score, solution, timestamp];
-
-    if (!achievements.some(([n, s, ]) => n === numCells && s === score)) {
+    
+    if (!achievements.some(([ , , sol ]) => areSolutionsEqual(sol, solution))) {
       achievements.push(achievement);
       updateAchievementsList();
       saveAchievements();
@@ -433,29 +426,21 @@ function updateRectanglesList() {
   console.log("Achievements:", achievements);
 }
 
-function updateAchievementsList() {
-  const achievementsList = document.getElementById('achievements-items');
-  achievementsList.innerHTML = ''; // Clear existing list
-
-  // Filter achievements for the current N and sort by score
-  const currentAchievements = achievements
-     .filter(([n]) => n === numCells) // Filter by current N
-    // .sort((a, b) => a[1] - b[1]); // Sort by score (smallest to largest)
-
-  // Populate the achievements list with the sorted achievements
-  currentAchievements.forEach(achievement => {
-    const [n, score, solution, timestamp] = achievement;
-    const button = document.createElement('button');
-    button.textContent = `${score}`;
-    button.className = 'achievement-button';
-    button.onclick = () => reproduceAchievement(achievement);
-    achievementsList.appendChild(button);
+function areSolutionsEqual(sol1, sol2) {
+  if (sol1.length !== sol2.length) return false;
+  
+  return sol1.every((dict, index) => {
+    const keys1 = Object.keys(dict);
+    const keys2 = Object.keys(sol2[index]);
+    
+    if (keys1.length !== keys2.length) return false;
+    
+    return keys1.every(key => dict[key] === sol2[index][key]);
   });
-  // Update the detailed log table
-  updateDetailedLogTable();
 }
 
-function updateDetailedLogTable() {
+
+function updateAchievementsList() {
   const tableBody = document.getElementById('detailed-log-table-body');
   
   // Clear existing rows
@@ -467,24 +452,26 @@ function updateDetailedLogTable() {
   const fragment = document.createDocumentFragment();
 
   // Sort achievements by timestamp (most recent first)
-  const sortedAchievements = achievements.sort((a, b) => new Date(b[3]) - new Date(a[3]));
+  const sortedAchievements = achievements.sort((a, b) => new Date(b[3]) - new Date(a[3]))
+  .filter(([n]) => n === numCells); // Filter by current N
+
 
   sortedAchievements.forEach(achievement => {
     const [n, score, solution, timestamp] = achievement;
     
     const row = document.createElement('tr');
     
-    const achievementCell = document.createElement('td');
-    achievementCell.textContent = `${n}`;
-    row.appendChild(achievementCell);
+    // const achievementCell = document.createElement('td');
+    // achievementCell.textContent = `${n}`;
+    // row.appendChild(achievementCell);
     
     const descriptionCell = document.createElement('td');
     descriptionCell.textContent = `${score}`;
     row.appendChild(descriptionCell);
     
-    const dateCell = document.createElement('td');
-    dateCell.textContent = new Date(timestamp).toLocaleString();
-    row.appendChild(dateCell);
+    // const dateCell = document.createElement('td');
+    // dateCell.textContent = new Date(timestamp).toLocaleString();
+    // row.appendChild(dateCell);
 
     const loadCell = document.createElement('td');    
     const svg = createSVGPreview(n, solution);
