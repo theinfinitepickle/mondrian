@@ -353,7 +353,7 @@ function generateObstacles() {
     obstacles.forEach(obstacle => obstacle.destroy());
     obstacles = [];
 
-    const numObstacles = 3; // 10% of cells will be obstacles
+    const numObstacles = Math.floor(Math.random() * 5) + 1; 
     const occupiedCells = new Set();
 
     for (let i = 0; i < numObstacles; i++) {
