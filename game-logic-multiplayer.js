@@ -699,7 +699,7 @@ function getAvatarUrl(seed) {
 
 function updateUserList() {
     const userList = document.getElementById("userList");
-    userList.innerHTML = Array.from(users.keys()).map(userId => `<li><img src="${getAvatarUrl(userId)}" alt="${userId ? userId.substring(0, 2) : '??'}"></li>`).join('');
+    userList.innerHTML = Array.from(users.keys()).map(userId => `<img src="${getAvatarUrl(userId)}" alt="${userId ? userId.substring(0, 2) : '??'}">`).join('');
 }
 
 function updateAchievements(newAchievements) {
