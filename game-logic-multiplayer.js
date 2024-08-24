@@ -343,40 +343,40 @@ function generateObstacles() {
     // Clear existing obstacles
     obstacles.forEach(obstacle => obstacle.destroy());
     obstacles = [];
-  
+
     const numObstacles = 3; // 10% of cells will be obstacles
     const occupiedCells = new Set();
-  
+
     for (let i = 0; i < numObstacles; i++) {
-      let x, y;
-      do {
-        x = Math.floor(Math.random() * numCells);
-        y = Math.floor(Math.random() * numCells);
-      } while (occupiedCells.has(`${x},${y}`));
-  
-      occupiedCells.add(`${x},${y}`);
-  
-      const obstacle = new Konva.Circle({
-        x: x * gridSize + margin + gridSize / 2,
-        y: y * gridSize + margin + gridSize / 2,
-        radius: gridSize / 4,
-        fill: 'gray',
-        stroke: 'black',
-        strokeWidth: 2,
-      });
-  
-      obstacles.push(obstacle);
-      layer.add(obstacle);
+        let x, y;
+        do {
+            x = Math.floor(Math.random() * numCells);
+            y = Math.floor(Math.random() * numCells);
+        } while (occupiedCells.has(`${x},${y}`));
+
+        occupiedCells.add(`${x},${y}`);
+
+        const obstacle = new Konva.Circle({
+            x: x * gridSize + margin + gridSize / 2,
+            y: y * gridSize + margin + gridSize / 2,
+            radius: gridSize / 4,
+            fill: 'gray',
+            stroke: 'black',
+            strokeWidth: 2,
+        });
+
+        obstacles.push(obstacle);
+        layer.add(obstacle);
     }
-  
+
     layer.draw();
     updateRectanglesList();
-  
+
     // Send obstacles to other players if in a room
     if (room && sendObstacles) {
-      sendObstacles(obstacles.map(o => ({ x: o.x(), y: o.y() })));
+        sendObstacles(obstacles.map(o => ({ x: o.x(), y: o.y() })));
     }
-  }
+}
 
 
 function rectanglesOverlap(r1, r2) {
@@ -709,97 +709,97 @@ function generateRoomCode() {
 
 function sendGameState() {
     if (sendAchievements) {
-      sendAchievements(achievements);
+        sendAchievements(achievements);
     }
     if (sendObstacles && obstacles.length > 0) {
-      sendObstacles(obstacles.map(o => ({ x: o.x(), y: o.y() })));
+        sendObstacles(obstacles.map(o => ({ x: o.x(), y: o.y() })));
     }
-  }
+}
 
 function initializeNewRoom() {
     currentRoomCode = generateRoomCode();
     const appId = `mondrian-${currentRoomCode}`;
     const config = { appId: appId };
-    
+
     room = joinRoom(config, currentRoomCode);
-    
+
     document.getElementById("myId").innerHTML = `<img src="${getAvatarUrl(selfId)}" alt="${selfId ? selfId.substring(0, 2) : '??'}">`;
     document.getElementById("roomId").textContent = currentRoomCode;
-    
+
     [sendAchievements, receiveAchievements] = room.makeAction("achievements");
     receiveAchievements(updateAchievements);
-    
+
     [sendObstacles, receiveObstacles] = room.makeAction("obstacles");
     receiveObstacles(handleReceivedObstacles);
-    
-    room.onPeerJoin((userId) => {
-      users.set(userId, true);
-      updateUserList();
-      sendGameState();
-    });
-    
-    room.onPeerLeave((userId) => {
-      users.delete(userId);
-      updateUserList();
-    });
-    
-    console.log("Connected to new room. Room code:", currentRoomCode);
-  }
 
-  function initializeJoinRoom(roomCode) {
+    room.onPeerJoin((userId) => {
+        users.set(userId, true);
+        updateUserList();
+        sendGameState();
+    });
+
+    room.onPeerLeave((userId) => {
+        users.delete(userId);
+        updateUserList();
+    });
+
+    console.log("Connected to new room. Room code:", currentRoomCode);
+}
+
+function initializeJoinRoom(roomCode) {
     currentRoomCode = roomCode;
     const appId = `mondrian-${currentRoomCode}`;
     const config = { appId: appId };
-    
+
     room = joinRoom(config, currentRoomCode);
-    
+
     document.getElementById("myId").innerHTML = `<img src="${getAvatarUrl(selfId)}" alt="${selfId ? selfId.substring(0, 2) : '??'}">`;
     document.getElementById("roomId").textContent = currentRoomCode;
-    
+
     [sendAchievements, receiveAchievements] = room.makeAction("achievements");
     receiveAchievements(updateAchievements);
-    
+
     [sendObstacles, receiveObstacles] = room.makeAction("obstacles");
     receiveObstacles(handleReceivedObstacles);
-    
+
     room.onPeerJoin((userId) => {
-      users.set(userId, true);
-      updateUserList();
-      sendGameState();
+        users.set(userId, true);
+        updateUserList();
+        sendGameState();
     });
-    
+
     room.onPeerLeave((userId) => {
-      users.delete(userId);
-      updateUserList();
+        users.delete(userId);
+        updateUserList();
     });
-    
+
     console.log("Connected to room. Room code:", currentRoomCode);
-  }
+}
 
 
-  function handleReceivedObstacles(receivedObstacles) {
+function handleReceivedObstacles(receivedObstacles) {
     // Clear existing obstacles
     obstacles.forEach(obstacle => obstacle.destroy());
     obstacles = [];
-  
+
     // Create new obstacles based on received data
     receivedObstacles.forEach(obs => {
-      const obstacle = new Konva.Circle({
-        x: obs.x,
-        y: obs.y,
-        radius: gridSize / 4,
-        fill: 'gray',
-        stroke: 'black',
-        strokeWidth: 2,
-      });
-  
-      obstacles.push(obstacle);
-      layer.add(obstacle);
+        const obstacle = new Konva.Circle({
+            x: obs.x,
+            y: obs.y,
+            radius: gridSize / 4,
+            fill: 'gray',
+            stroke: 'black',
+            strokeWidth: 2,
+        });
+
+        obstacles.push(obstacle);
+        layer.add(obstacle);
     });
-  
+
     layer.draw();
     updateRectanglesList();
-  }
+}
 
 
 document.getElementById("new-room").addEventListener("click", initializeNewRoom);
