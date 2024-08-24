@@ -78,6 +78,15 @@ function saveAchievements() {
 //   }
 // });
 
+function resetAchievements() {
+    achievements = [];
+    saveAchievements();
+    if (room && sendAchievements) {
+        sendAchievements(achievements);
+    }
+    updateAchievementsList();
+}
+
 function reproduceAchievement(achievement) {
     // Extract data from the achievement
     const [achievementNumCells, achievementScore, solution] = achievement;
@@ -370,6 +379,10 @@ function generateObstacles() {
     }
 
     layer.draw();
+
+    document.getElementById("clear-button").click();
+    resetAchievements();
+
     updateRectanglesList();
 
     // Send obstacles to other players if in a room
