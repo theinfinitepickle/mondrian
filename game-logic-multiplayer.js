@@ -1,4 +1,4 @@
-let numCells = 4; // Default to 4x4 grid
+let numCells = 8; // Default to 4x4 grid
 let gameArea = Math.min(Math.floor(window.innerWidth - 75), 500);
 let gridSize = Math.round(gameArea / (numCells + 1));
 let halfGridSize = Math.round(gridSize / 2);
@@ -23,6 +23,7 @@ import { joinRoom, selfId } from "./trystero-nostr.min.js";
 const users = new Map();
 let room;
 let sendAchievements;
+let currentRoomCode = null;
 
 function initGame() {
   // Clear existing stage if it exists
@@ -53,23 +54,23 @@ function initGame() {
 
 // Save achievements to Local Storage
 function saveAchievements() {
-  localStorage.setItem('achievements', JSON.stringify(achievements));
+//   localStorage.setItem('achievements', JSON.stringify(achievements));
 }
 
-document.getElementById('reset-achievements-link').addEventListener('click', function(event) {
-  event.preventDefault(); // Prevent the default link behavior
+// document.getElementById('reset-achievements-link').addEventListener('click', function(event) {
+//   event.preventDefault(); // Prevent the default link behavior
 
-  if (confirm('Are you sure you want to reset your achievements?')) {
-    localStorage.removeItem('achievements'); // Remove achievements from Local Storage
-    alert('Achievements have been reset.');
+//   if (confirm('Are you sure you want to reset your achievements?')) {
+//     localStorage.removeItem('achievements'); // Remove achievements from Local Storage
+//     alert('Achievements have been reset.');
     
-    // Optionally reload the page or update the UI
-    achievements = [];
-    loadAchievements(); // Reload the achievements (which should now be empty)
-    updateAchievementsList(); // Update the UI to reflect the reset
-    document.getElementById("clear-button").click();
-  }
-});
+//     // Optionally reload the page or update the UI
+//     achievements = [];
+//     loadAchievements(); // Reload the achievements (which should now be empty)
+//     updateAchievementsList(); // Update the UI to reflect the reset
+//     document.getElementById("clear-button").click();
+//   }
+// });
 
 function reproduceAchievement(achievement) {
   // Extract data from the achievement
@@ -134,10 +135,10 @@ function reproduceAchievement(achievement) {
 
 // Load achievements from Local Storage
 function loadAchievements() {
-  const storedAchievements = localStorage.getItem('achievements');
-  if (storedAchievements) {
-    achievements = JSON.parse(storedAchievements);
-  }
+//   const storedAchievements = localStorage.getItem('achievements');
+//   if (storedAchievements) {
+//     achievements = JSON.parse(storedAchievements);
+//   }
 }
 
 function drawGrid() {
@@ -420,7 +421,7 @@ function updateRectanglesList() {
     });
 
     const timestamp = new Date().toISOString();
-    const achievement = [numCells, score, solution, timestamp];
+    const achievement = [numCells, score, solution, timestamp, selfId];
     
     if (!achievements.some(([ , , sol ]) => areSolutionsEqual(sol, solution))) {
       achievements.push(achievement);
@@ -463,12 +464,25 @@ function updateAchievementsList() {
   const fragment = document.createDocumentFragment();
 
   // Sort achievements by timestamp (most recent first)
-  const sortedAchievements = achievements.sort((a, b) => new Date(b[3]) - new Date(a[3]))
-  .filter(([n]) => n === numCells); // Filter by current N
+
+  const sortedAchievements = achievements
+    .filter(([n]) => n === numCells) // Filter by current N
+    .sort((a, b) => {
+      const scoreA = a[1];
+      const scoreB = b[1];
+      const timeA = new Date(a[3]);
+      const timeB = new Date(b[3]);
+      
+      if (scoreA !== scoreB) {
+        return scoreA - scoreB; // Sort by score (smallest first)
+      } else {
+        return timeA - timeB; // If scores are equal, sort by time (earliest first)
+      }
+    });
 
 
   sortedAchievements.forEach(achievement => {
-    const [n, score, solution, timestamp] = achievement;
+    const [n, score, solution, timestamp, playerId] = achievement;
     
     const row = document.createElement('tr');
     
@@ -480,6 +494,11 @@ function updateAchievementsList() {
     descriptionCell.textContent = `${score}`;
     row.appendChild(descriptionCell);
     
+    const playerIdCell = document.createElement('td');
+    const playerIdShort = `<img src="${getAvatarUrl(playerId)}" alt="${playerId ? playerId.substring(0, 2) : '??'}">`
+    playerIdCell.innerHTML = `${playerIdShort}`;
+    row.appendChild(playerIdCell);
+
     // const dateCell = document.createElement('td');
     // dateCell.textContent = new Date(timestamp).toLocaleString();
     // row.appendChild(dateCell);
@@ -576,12 +595,26 @@ initGame();
 loadAchievements();
 updateAchievementsList();
 
+function getAvatarUrl(seed) {
+    const baseUrl = 'https://api.dicebear.com/9.x/icons/svg';
+    const icons = 'alarm,bell,egg,flower2,snow2,umbrella';
+    const radius = 25;
+    
+    const url = new URL(baseUrl);
+    url.searchParams.append('icon', icons);
+    url.searchParams.append('radius', radius);
+    url.searchParams.append('size', 32);
+    url.searchParams.append('seed', seed);
+    
+    console.log(seed);
+    return url.toString();
+  }
 
 // Multiplayer routines
 
 function updateUserList() {
     const userList = document.getElementById("userList");
-    userList.innerHTML = Array.from(users.keys()).map(userId => `<li>${userId}</li>`).join('');
+    userList.innerHTML = Array.from(users.keys()).map(userId => `<li><img src="${getAvatarUrl(userId)}" alt="${userId ? userId.substring(0, 2) : '??'}"></li>`).join('');
 }
 
 function updateAchievements(newAchievements) {
@@ -591,38 +624,84 @@ function updateAchievements(newAchievements) {
     updateAchievementsList();
 }
 
-function initializeConnection() {
-    const roomName = "theinfinitepickle-com-mondrian-multiplayer";
-    const config = { appId: "group-competition" };
-    room = joinRoom(config, roomName);
-    document.getElementById("myId").textContent = selfId;
-    document.getElementById("connect").disabled = true;
+
+function generateRoomCode() {
+    const parts = [
+      Math.random().toString(36).substr(2, 3),
+      Math.random().toString(36).substr(2, 2),
+      Math.random().toString(36).substr(2, 2)
+    ];
+    return parts.join('-').toUpperCase();
+  }
+  
+  function initializeNewRoom() {
+    currentRoomCode = generateRoomCode();
+    const appId = `mondrian-${currentRoomCode}`;
+    const config = { appId: appId };
+    
+    room = joinRoom(config, currentRoomCode);
+    
+    document.getElementById("myId").innerHTML = `<img src="${getAvatarUrl(selfId)}" alt="${selfId ? selfId.substring(0, 2) : '??'}">`;
+    document.getElementById("roomId").textContent = currentRoomCode;
+    
     const [sendAchievements, receiveAchievements] = room.makeAction("achievements");
     receiveAchievements(updateAchievements);
+    
     room.onPeerJoin((userId) => {
-        users.set(userId, true);
-        updateUserList();
-        sendAchievements(achievements);
+      users.set(userId, true);
+      updateUserList();
+      sendAchievements(achievements);
     });
+    
     room.onPeerLeave((userId) => {
-        users.delete(userId);
-        updateUserList();
+      users.delete(userId);
+      updateUserList();
     });
-    console.log("Connected. My user ID:", selfId);
-}
+    
+    console.log("Connected to new room. Room code:", currentRoomCode);
+  }
+  
+  function initializeJoinRoom(roomCode) {
+    currentRoomCode = roomCode;
+    const appId = `mondrian-${currentRoomCode}`;
+    const config = { appId: appId };
+    
+    room = joinRoom(config, currentRoomCode);
+    
+    document.getElementById("myId").innerHTML = `<img src="${getAvatarUrl(selfId)}" alt="${selfId ? selfId.substring(0, 2) : '??'}">`;
+    document.getElementById("roomId").textContent = currentRoomCode;
+    
+    const [sendAchievements, receiveAchievements] = room.makeAction("achievements");
+    receiveAchievements(updateAchievements);
+    
+    room.onPeerJoin((userId) => {
+      users.set(userId, true);
+      updateUserList();
+      sendAchievements(achievements);
+    });
+    
+    room.onPeerLeave((userId) => {
+      users.delete(userId);
+      updateUserList();
+    });
+    
+    console.log("Connected to room. Room code:", currentRoomCode);
+  }
 
-// Dialog functionality
-const dialog = document.getElementById("trystero-dialog");
-const multiplayerButton = document.getElementById("multiplayer-button");
-const closeDialogButton = document.getElementById("close-dialog");
-const connectButton = document.getElementById("connect");
 
-multiplayerButton.addEventListener("click", () => {
-    dialog.showModal();
+document.getElementById("new-room").addEventListener("click", initializeNewRoom);
+
+document.getElementById("join-room").addEventListener("click", () => {
+  document.getElementById("join-room-dialog").showModal();
 });
 
-closeDialogButton.addEventListener("click", () => {
-    dialog.close();
+document.getElementById("connect-to-room").addEventListener("click", () => {
+  const roomCode = document.getElementById("room-code").value.toUpperCase();
+  if (roomCode) {
+    initializeJoinRoom(roomCode);
+    document.getElementById("join-room-dialog").close();
+  } else {
+    alert("Please enter a valid room code.");
+  }
 });
 
-connectButton.addEventListener("click", initializeConnection);
