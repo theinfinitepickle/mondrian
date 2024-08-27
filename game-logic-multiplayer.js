@@ -534,7 +534,6 @@ function areSolutionsEqual(sol1, sol2) {
     });
 }
 
-
 function updateAchievementsList() {
     const tableBody = document.getElementById('detailed-log-table-body');
 
@@ -563,15 +562,18 @@ function updateAchievementsList() {
             }
         });
 
+    // Update best score
+    if (sortedAchievements.length > 0) {
+        const bestScore = sortedAchievements[0][1];
+        document.getElementById('best-score-status').textContent = `Best Score: ${bestScore}`;
+    } else {
+        document.getElementById('best-score-status').textContent = 'Best Score: N/A';
+    }
 
     sortedAchievements.forEach(achievement => {
         const [n, score, solution, timestamp, playerId] = achievement;
 
         const row = document.createElement('tr');
-
-        // const achievementCell = document.createElement('td');
-        // achievementCell.textContent = `${n}`;
-        // row.appendChild(achievementCell);
 
         const descriptionCell = document.createElement('td');
         descriptionCell.textContent = `${score}`;
@@ -582,10 +584,6 @@ function updateAchievementsList() {
         playerIdCell.innerHTML = `${playerIdShort}`;
         row.appendChild(playerIdCell);
 
-        // const dateCell = document.createElement('td');
-        // dateCell.textContent = new Date(timestamp).toLocaleString();
-        // row.appendChild(dateCell);
-
         const loadCell = document.createElement('td');
         const svg = createSVGPreview(n, solution);
         svg.onclick = () => reproduceAchievement(achievement);
@@ -595,9 +593,6 @@ function updateAchievementsList() {
         console.log(row);
 
         fragment.appendChild(row);
-
-
-
     });
 
     // Append the fragment to the table body
