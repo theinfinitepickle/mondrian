@@ -5,11 +5,21 @@ let halfGridSize = Math.round(gridSize / 2);
 const margin = 30;// Math.round(halfGridSize);
 let stageSize = numCells * gridSize + 2 * margin;
 
+// Define Konva rectangle properties
+const rectOpacity = 0.7;
+const rectStrokeWidth = 4;
+const rectStrokeColor = "rgba(0, 0, 0, 1)";
+
 let achievements = [];
 
 let obstacles = []; // Global variable to store all obstacles
 
-const colors = ["blue", "red", "yellow", "white"];
+const colors = [
+    "rgba(0, 0, 255, 0.7)",   // blue with opacity
+    "rgba(255, 0, 0, 0.7)",   // red with opacity
+    "rgba(255, 255, 0, 0.7)", // yellow with opacity
+    "rgba(255, 255, 255, 0.7)" // white with opacity
+];
 
 let stage, layer;
 let isDrawing = false;
@@ -25,8 +35,8 @@ const users = new Map();
 let room;
 let currentRoomCode = null;
 
-let sendObstacles;
-let receiveObstacles;
+// let sendObstacles;
+// let receiveObstacles;
 let sendAchievements;
 let receiveAchievements;
 
@@ -63,35 +73,6 @@ export function initGame(roomId) {
     initializeJoinRoom(roomId);
 }
 
-// Save achievements to Local Storage
-function saveAchievements() {
-    //   localStorage.setItem('achievements', JSON.stringify(achievements));
-}
-
-// document.getElementById('reset-achievements-link').addEventListener('click', function(event) {
-//   event.preventDefault(); // Prevent the default link behavior
-
-//   if (confirm('Are you sure you want to reset your achievements?')) {
-//     localStorage.removeItem('achievements'); // Remove achievements from Local Storage
-//     alert('Achievements have been reset.');
-
-//     // Optionally reload the page or update the UI
-//     achievements = [];
-//     loadAchievements(); // Reload the achievements (which should now be empty)
-//     updateAchievementsList(); // Update the UI to reflect the reset
-//     document.getElementById("clear-button").click();
-//   }
-// });
-
-function resetAchievements() {
-    achievements = [];
-    saveAchievements();
-    if (room && sendAchievements) {
-        sendAchievements(achievements);
-    }
-    updateAchievementsList();
-}
-
 function reproduceAchievement(achievement) {
     // Extract data from the achievement
     const [achievementNumCells, achievementScore, solution] = achievement;
@@ -106,7 +87,6 @@ function reproduceAchievement(achievement) {
     stageSize = numCells * gridSize + 2 * margin;
 
     // Reinitialize the game with the new number of cells
-    // initGame();
 
     // Clear the current board using the existing functionality
     document.getElementById("clear-button").click();
@@ -119,9 +99,9 @@ function reproduceAchievement(achievement) {
             width: rect.width * gridSize,
             height: rect.height * gridSize,
             fill: rect.color,
-            stroke: "black",
-            strokeWidth: 4,
-            opacity: 0.7,
+            stroke: rectStrokeColor,
+            strokeWidth: rectStrokeWidth,
+            opacity: 1,
         });
 
         const label = new Konva.Text({
@@ -151,14 +131,6 @@ function reproduceAchievement(achievement) {
     updateRectanglesList();
 
     console.log(`Reproduced achievement: ${achievementNumCells}x${achievementNumCells} grid with score ${achievementScore}`);
-}
-
-// Load achievements from Local Storage
-function loadAchievements() {
-    //   const storedAchievements = localStorage.getItem('achievements');
-    //   if (storedAchievements) {
-    //     achievements = JSON.parse(storedAchievements);
-    //   }
 }
 
 function drawGrid() {
@@ -194,7 +166,6 @@ function setupEventListeners() {
     stage.on("mousedown touchstart", handleMouseDown);
     stage.on("mousemove touchmove", handleMouseMove);
     stage.on("mouseup touchend", handleMouseUp);
-    // document.getElementById('generate-obstacles-button').addEventListener('click', generateObstacles);
 }
 
 function handleMouseDown(e) {
@@ -243,9 +214,9 @@ function handleMouseDown(e) {
             width: gridSize,
             height: gridSize,
             fill: chosenColor,
-            stroke: "black",
-            strokeWidth: 4,
-            opacity: 0.7,
+            stroke: rectStrokeColor,
+            strokeWidth: rectStrokeWidth,
+            opacity: 1,
         });
         label = new Konva.Text({
             x: startX,
@@ -318,11 +289,9 @@ function handleMouseMove(e) {
     });
 
     if (isOverlapping(rect)) {
-        rect.fill("black");
-        rect.opacity(0.2);
+        rect.fill("rgba(0, 0, 0, 0.2)");
     } else {
         rect.fill(chosenColor);
-        rect.opacity(0.7);
     }
 
     layer.draw();
@@ -385,6 +354,10 @@ function generateObstacles(seed) {
             strokeWidth: 2,
         });
 
+        // Store x and y in integer units representing the position on the grid
+        obstacle.gridX = x;
+        obstacle.gridY = y;
+
         obstacles.push(obstacle);
         layer.add(obstacle);
     }
@@ -392,16 +365,9 @@ function generateObstacles(seed) {
     layer.draw();
 
     document.getElementById("clear-button").click();
-    resetAchievements();
 
     updateRectanglesList();
-
-    // Send obstacles to other players if in a room
-    // if (room && sendObstacles) {
-    //     sendObstacles(obstacles.map(o => ({ x: o.x(), y: o.y() })));
-    // }
 }
-
 
 function rectanglesOverlap(r1, r2) {
     const overlap = !(
@@ -421,7 +387,6 @@ function isOverlapping(newRect) {
             return true;
         }
     }
-
 
     for (let obstacle of obstacles) {
         const obstacleRect = {
@@ -520,7 +485,6 @@ function updateRectanglesList() {
         if (!achievements.some(([, , sol]) => areSolutionsEqual(sol, solution))) {
             achievements.push(achievement);
             updateAchievementsList();
-            saveAchievements();
             // After updating the local achievements list, sync with Trystero
             if (room) {
                 const [sendAchievements] = room.makeAction("achievements");
@@ -591,12 +555,13 @@ function updateAchievementsList() {
         row.appendChild(descriptionCell);
 
         const playerIdCell = document.createElement('td');
-        const playerIdShort = `<img src="${getAvatarUrl(playerId)}" alt="${playerId ? playerId.substring(0, 2) : '??'}">`
+        const { icon, color } = getAvatarUrl(playerId);
+        const playerIdShort = `<i class="fas ${icon}" style="color: ${color};" title="${playerId ? playerId.substring(0, 2) : '??'}"></i>`;
         playerIdCell.innerHTML = `${playerIdShort}`;
         row.appendChild(playerIdCell);
 
         const loadCell = document.createElement('td');
-        const svg = createSVGPreview(n, solution);
+        const svg = createSVGPreview(n, solution, obstacles);
         svg.onclick = () => reproduceAchievement(achievement);
         loadCell.appendChild(svg);
         row.appendChild(loadCell);
@@ -609,15 +574,14 @@ function updateAchievementsList() {
     // Append the fragment to the table body
     tableBody.appendChild(fragment);
 }
-
-function createSVGPreview(gridSize, solution) {
+function createSVGPreview(gridSize, solution, obstacles) {
     const svgSize = 100; // Size of the SVG preview
     const cellSize = svgSize / gridSize;
 
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
-    svg.setAttribute("width", svgSize);
-    svg.setAttribute("height", svgSize);
-    svg.setAttribute("viewBox", `0 0 ${svgSize} ${svgSize}`);
+    svg.setAttribute("width", svgSize+4);
+    svg.setAttribute("height", svgSize+4);
+    svg.setAttribute("viewBox", `-2 -2 ${svgSize+4} ${svgSize+4}`);
 
     solution.forEach(rect => {
         const svgRect = document.createElementNS("http://www.w3.org/2000/svg", "rect");
@@ -627,8 +591,20 @@ function createSVGPreview(gridSize, solution) {
         svgRect.setAttribute("height", rect.height * cellSize);
         svgRect.setAttribute("fill", rect.color);
         svgRect.setAttribute("stroke", "black");
-        svgRect.setAttribute("stroke-width", "5");
+        svgRect.setAttribute("stroke-width", "2");
+        svgRect.setAttribute("stroke-alignment", "center");
         svg.appendChild(svgRect);
+    });
+
+    obstacles.forEach(obstacle => {
+        const svgCircle = document.createElementNS("http://www.w3.org/2000/svg", "circle");
+        svgCircle.setAttribute("cx", (obstacle.gridX + 0.5) * cellSize);
+        svgCircle.setAttribute("cy", (obstacle.gridY + 0.5) * cellSize);
+        svgCircle.setAttribute("r", cellSize / 4);
+        svgCircle.setAttribute("fill", "black");
+        svgCircle.setAttribute("stroke", "black");
+        svgCircle.setAttribute("stroke-width", "0");
+        svg.appendChild(svgCircle);
     });
 
     return svg;
@@ -680,31 +656,38 @@ document.addEventListener("dblclick", function (event) {
     event.preventDefault();
 });
 
-// Initialize the game
-// Call this function when the app initializes
-// loadAchievements();
-// updateAchievementsList();
-
 function getAvatarUrl(seed) {
-    const baseUrl = 'https://api.dicebear.com/9.x/icons/svg';
-    const icons = 'alarm,bell,egg,flower2,snow2,umbrella';
-    const radius = 25;
+    const icons = ['fa-bug', 'fa-cat', 'fa-crow', 'fa-dog', 'fa-fish', 'fa-frog', 'fa-hippo', 'fa-kiwi-bird', 'fa-worm'];
+    const colors = ['#90EE90', '#FFB6C1', '#ADD8E6']; // light green, light red, light blue
 
-    const url = new URL(baseUrl);
-    url.searchParams.append('icon', icons);
-    url.searchParams.append('radius', radius);
-    url.searchParams.append('size', 32);
-    url.searchParams.append('seed', seed);
+    // Use a simple hash function to get a deterministic index
+    const hashCode = (str) => {
+        let hash = 0;
+        for (let i = 0; i < str.length; i++) {
+            const char = str.charCodeAt(i);
+            hash = ((hash << 5) - hash) + char;
+            hash = hash & hash; // Convert to 32-bit integer
+        }
+        return Math.abs(hash);
+    };
 
-    console.log(seed);
-    return url.toString();
+    const iconIndex = hashCode(seed) % icons.length;
+    const colorIndex = hashCode(seed + 'color') % colors.length;
+
+    const icon = icons[iconIndex];
+    const color = colors[colorIndex];
+
+    return { icon, color };
 }
 
 // Multiplayer routines
 
 function updateUserList() {
     const userList = document.getElementById("userList");
-    userList.innerHTML = Array.from(users.keys()).map(userId => `<img src="${getAvatarUrl(userId)}" alt="${userId ? userId.substring(0, 2) : '??'}">`).join('');
+    userList.innerHTML = Array.from(users.keys()).map(userId => {
+        const { icon, color } = getAvatarUrl(userId);
+        return `<i class="fas ${icon}" style="color: ${color};" title="${userId ? userId.substring(0, 2) : '??'}"></i>`;
+    }).join('');
 }
 
 function updateAchievements(newAchievements) {
@@ -714,54 +697,13 @@ function updateAchievements(newAchievements) {
     updateAchievementsList();
 }
 
-
-function generateRoomCode() {
-    const parts = [
-        Math.random().toString(36).substr(2, 3),
-        Math.random().toString(36).substr(2, 2),
-        Math.random().toString(36).substr(2, 2)
-    ];
-    return parts.join('-').toUpperCase();
-}
-
-
 function sendGameState() {
     if (sendAchievements) {
         sendAchievements(achievements);
     }
-    if (sendObstacles && obstacles.length > 0) {
-        sendObstacles(obstacles.map(o => ({ x: o.x(), y: o.y() })));
-    }
-}
-
-function initializeNewRoom() {
-    currentRoomCode = generateRoomCode();
-    const appId = `mondrian-${currentRoomCode}`;
-    const config = { appId: appId };
-
-    room = joinRoom(config, currentRoomCode);
-
-    document.getElementById("myId").innerHTML = `<img src="${getAvatarUrl(selfId)}" alt="${selfId ? selfId.substring(0, 2) : '??'}">`;
-    document.getElementById("roomId").textContent = currentRoomCode;
-
-    [sendAchievements, receiveAchievements] = room.makeAction("achievements");
-    receiveAchievements(updateAchievements);
-
-    [sendObstacles, receiveObstacles] = room.makeAction("obstacles");
-    receiveObstacles(handleReceivedObstacles);
-
-    room.onPeerJoin((userId) => {
-        users.set(userId, true);
-        updateUserList();
-        sendGameState();
-    });
-
-    room.onPeerLeave((userId) => {
-        users.delete(userId);
-        updateUserList();
-    });
-
-    console.log("Connected to new room. Room code:", currentRoomCode);
+    // if (sendObstacles && obstacles.length > 0) {
+    //     sendObstacles(obstacles.map(o => ({ x: o.x(), y: o.y() })));
+    // }
 }
 
 function initializeJoinRoom(roomId) {
@@ -771,15 +713,17 @@ function initializeJoinRoom(roomId) {
 
     room = joinRoom(config, currentRoomCode);
 
-    document.getElementById("myId").innerHTML = `<img src="${getAvatarUrl(selfId)}" alt="${selfId ? selfId.substring(0, 2) : '??'}">`;
+    const { icon, color } = getAvatarUrl(selfId);
+    const playerIdShort = `<i class="fas ${icon}" style="color: ${color};" title="${selfId ? selfId.substring(0, 2) : '??'}"></i>`;
+    document.getElementById("myId").innerHTML = playerIdShort;
     document.getElementById("roomId").innerHTML = `
         ${roomId.map(animal => `<i class="icon fas fa-${animal}" data-animal="${animal}"></i>`).join('\n')}`;
 
     [sendAchievements, receiveAchievements] = room.makeAction("achievements");
     receiveAchievements(updateAchievements);
 
-    [sendObstacles, receiveObstacles] = room.makeAction("obstacles");
-    receiveObstacles(handleReceivedObstacles);
+    // [sendObstacles, receiveObstacles] = room.makeAction("obstacles");
+    // receiveObstacles(handleReceivedObstacles);
 
     room.onPeerJoin((userId) => {
         users.set(userId, true);
@@ -796,44 +740,26 @@ function initializeJoinRoom(roomId) {
 }
 
 
-function handleReceivedObstacles(receivedObstacles) {
-    // Clear existing obstacles
-    obstacles.forEach(obstacle => obstacle.destroy());
-    obstacles = [];
+// function handleReceivedObstacles(receivedObstacles) {
+//     // Clear existing obstacles
+//     obstacles.forEach(obstacle => obstacle.destroy());
+//     obstacles = [];
 
-    // Create new obstacles based on received data
-    receivedObstacles.forEach(obs => {
-        const obstacle = new Konva.Circle({
-            x: obs.x,
-            y: obs.y,
-            radius: gridSize / 4,
-            fill: 'gray',
-            stroke: 'black',
-            strokeWidth: 2,
-        });
+//     // Create new obstacles based on received data
+//     receivedObstacles.forEach(obs => {
+//         const obstacle = new Konva.Circle({
+//             x: obs.x,
+//             y: obs.y,
+//             radius: gridSize / 4,
+//             fill: 'gray',
+//             stroke: 'black',
+//             strokeWidth: 2,
+//         });
 
-        obstacles.push(obstacle);
-        layer.add(obstacle);
-    });
+//         obstacles.push(obstacle);
+//         layer.add(obstacle);
+//     });
 
-    layer.draw();
-    updateRectanglesList();
-}
-
-
-// document.getElementById("new-room").addEventListener("click", initializeNewRoom);
-
-// document.getElementById("join-room").addEventListener("click", () => {
-//     document.getElementById("join-room-dialog").showModal();
-// });
-
-// document.getElementById("connect-to-room").addEventListener("click", () => {
-//     const roomCode = document.getElementById("room-code").value.toUpperCase();
-//     if (roomCode) {
-//         initializeJoinRoom(roomCode);
-//         document.getElementById("join-room-dialog").close();
-//     } else {
-//         alert("Please enter a valid room code.");
-//     }
-// });
-
+//     layer.draw();
+//     updateRectanglesList();
+// }
