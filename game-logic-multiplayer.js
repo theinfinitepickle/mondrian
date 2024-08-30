@@ -31,7 +31,9 @@ let sendAchievements;
 let receiveAchievements;
 
 
-function initGame() {
+export function initGame(roomId) {
+    console.log('Received list in game logic:', roomId);
+ 
     // Clear existing stage if it exists
     if (stage) {
         stage.destroy();
@@ -56,6 +58,9 @@ function initGame() {
     setupEventListeners();
 
     layer.draw();
+
+    generateObstacles(roomId);
+    initializeJoinRoom(roomId);
 }
 
 // Save achievements to Local Storage
@@ -189,7 +194,7 @@ function setupEventListeners() {
     stage.on("mousedown touchstart", handleMouseDown);
     stage.on("mousemove touchmove", handleMouseMove);
     stage.on("mouseup touchend", handleMouseUp);
-    document.getElementById('generate-obstacles-button').addEventListener('click', generateObstacles);
+    // document.getElementById('generate-obstacles-button').addEventListener('click', generateObstacles);
 }
 
 function handleMouseDown(e) {
@@ -347,20 +352,26 @@ function isInsideCanvas(x, y) {
         y <= stageSize - margin
     );
 }
-
-function generateObstacles() {
+function generateObstacles(seed) {
     // Clear existing obstacles
     obstacles.forEach(obstacle => obstacle.destroy());
     obstacles = [];
 
-    const numObstacles = Math.floor(Math.random() * 5) + 1; 
+    // Create a simple seeded random number generator
+    let state = Array.isArray(seed) ? seed.join(',').split('').reduce((a, b) => (a << 5) - a + b.charCodeAt(0), 0) : seed;
+    function rng() {
+        state = (state * 1103515245 + 12345) & 0x7fffffff;
+        return state / 0x7fffffff;
+    }
+
+    const numObstacles = Math.floor(rng() * 5) + 1; 
     const occupiedCells = new Set();
 
     for (let i = 0; i < numObstacles; i++) {
         let x, y;
         do {
-            x = Math.floor(Math.random() * numCells);
-            y = Math.floor(Math.random() * numCells);
+            x = Math.floor(rng() * numCells);
+            y = Math.floor(rng() * numCells);
         } while (occupiedCells.has(`${x},${y}`));
 
         occupiedCells.add(`${x},${y}`);
@@ -386,9 +397,9 @@ function generateObstacles() {
     updateRectanglesList();
 
     // Send obstacles to other players if in a room
-    if (room && sendObstacles) {
-        sendObstacles(obstacles.map(o => ({ x: o.x(), y: o.y() })));
-    }
+    // if (room && sendObstacles) {
+    //     sendObstacles(obstacles.map(o => ({ x: o.x(), y: o.y() })));
+    // }
 }
 
 
@@ -670,10 +681,9 @@ document.addEventListener("dblclick", function (event) {
 });
 
 // Initialize the game
-initGame();
 // Call this function when the app initializes
-loadAchievements();
-updateAchievementsList();
+// loadAchievements();
+// updateAchievementsList();
 
 function getAvatarUrl(seed) {
     const baseUrl = 'https://api.dicebear.com/9.x/icons/svg';
@@ -754,15 +764,16 @@ function initializeNewRoom() {
     console.log("Connected to new room. Room code:", currentRoomCode);
 }
 
-function initializeJoinRoom(roomCode) {
-    currentRoomCode = roomCode;
+function initializeJoinRoom(roomId) {
+    currentRoomCode = roomId.join(',');
     const appId = `mondrian-${currentRoomCode}`;
     const config = { appId: appId };
 
     room = joinRoom(config, currentRoomCode);
 
     document.getElementById("myId").innerHTML = `<img src="${getAvatarUrl(selfId)}" alt="${selfId ? selfId.substring(0, 2) : '??'}">`;
-    document.getElementById("roomId").textContent = currentRoomCode;
+    document.getElementById("roomId").innerHTML = `
+        ${roomId.map(animal => `<i class="icon fas fa-${animal}" data-animal="${animal}"></i>`).join('\n')}`;
 
     [sendAchievements, receiveAchievements] = room.makeAction("achievements");
     receiveAchievements(updateAchievements);
@@ -810,19 +821,19 @@ function handleReceivedObstacles(receivedObstacles) {
 }
 
 
-document.getElementById("new-room").addEventListener("click", initializeNewRoom);
+// document.getElementById("new-room").addEventListener("click", initializeNewRoom);
 
-document.getElementById("join-room").addEventListener("click", () => {
-    document.getElementById("join-room-dialog").showModal();
-});
+// document.getElementById("join-room").addEventListener("click", () => {
+//     document.getElementById("join-room-dialog").showModal();
+// });
 
-document.getElementById("connect-to-room").addEventListener("click", () => {
-    const roomCode = document.getElementById("room-code").value.toUpperCase();
-    if (roomCode) {
-        initializeJoinRoom(roomCode);
-        document.getElementById("join-room-dialog").close();
-    } else {
-        alert("Please enter a valid room code.");
-    }
-});
+// document.getElementById("connect-to-room").addEventListener("click", () => {
+//     const roomCode = document.getElementById("room-code").value.toUpperCase();
+//     if (roomCode) {
+//         initializeJoinRoom(roomCode);
+//         document.getElementById("join-room-dialog").close();
+//     } else {
+//         alert("Please enter a valid room code.");
+//     }
+// });
 

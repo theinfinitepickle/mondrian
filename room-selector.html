@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Room selection</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.green.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            padding: 0;
+        }
+        .icon-container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        .icon {
+            font-size: 2em;
+            cursor: pointer;
+            padding: 10px;
+            border: 2px solid var(--pico-background-color);
+            color: var(--pico-color);
+            border-radius: 5px;
+            transition: all 0.3s ease;
+        }
+        .icon.selected {
+            background-color: var(--pico-background-color);
+            color: var(--pico-primary);
+            border: 2px solid var(--pico-primary);
+        }
+        main.container {
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <main class="container">
+        <h1>Select at least 3 animal icons</h1>
+        <div class="icon-container">
+            <i class="icon fas fa-bug" data-animal="bug"></i>
+            <i class="icon fas fa-cat" data-animal="cat"></i>
+            <i class="icon fas fa-crow" data-animal="crow"></i>
+            <i class="icon fas fa-dog" data-animal="dog"></i>
+            <i class="icon fas fa-fish" data-animal="fish"></i>
+            <i class="icon fas fa-frog" data-animal="frog"></i>
+            <i class="icon fas fa-hippo" data-animal="hippo"></i>
+            <i class="icon fas fa-kiwi-bird" data-animal="kiwi-bird"></i>
+            <i class="icon fas fa-worm" data-animal="worm"></i>
+        </div>
+        <button id="connectBtn" disabled>Connect</button>
+    </main>
+
+    <script>
+        const icons = document.querySelectorAll('.icon');
+        const connectBtn = document.getElementById('connectBtn');
+        let selectedCount = 0;
+        const selectedAnimals = [];
+
+        icons.forEach(icon => {
+            icon.addEventListener('click', () => {
+                if (!icon.classList.contains('selected')) {
+                    icon.classList.add('selected');
+                    selectedCount++;
+                    selectedAnimals.push(icon.getAttribute('data-animal'));
+                } else {
+                    icon.classList.remove('selected');
+                    selectedCount--;
+                    const index = selectedAnimals.indexOf(icon.getAttribute('data-animal'));
+                    if (index > -1) {
+                        selectedAnimals.splice(index, 1);
+                    }
+                }
+                connectBtn.disabled = selectedCount < 3;
+            });
+        });
+        connectBtn.addEventListener('click', () => {
+            const sortedAnimals = selectedAnimals.sort();
+            const roomCode = sortedAnimals.join(',');
+            window.location.href = `index-multiplayer.html?room=${roomCode}`;
+        });
+    </script>
+</body>
+</html>

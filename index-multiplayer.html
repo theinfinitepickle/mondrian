@@ -7,7 +7,16 @@
     <title>Mondrian Art Puzzle</title>
     <!-- External CSS and JavaScript libraries -->
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.green.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <script>        
+    function getQueryParams() {
+        const params = new URLSearchParams(window.location.search);
+        const listParam = params.get('room');
+        return listParam ? listParam.split(',') : [];
+    }
+    const receivedList = getQueryParams();
+    </script>
     <style>
         /* Global styles */
         body {
@@ -258,19 +267,19 @@
         </header>
         <div id="panel-content">
             <!-- Navigation link -->
-            <div class="drawer-section">
+            <!-- <div class="drawer-section">
                 <a href="../" class="secondary">← Back to other puzzles</a>
-            </div>
+            </div> -->
 
             <!-- Multiplayer controls -->
-            <div id="multiplayer-controls" class="drawer-section">
+            <!-- <div id="multiplayer-controls" class="drawer-section">
                 <button id="generate-obstacles-button">Generate Obstacles</button>
-            </div>
+            </div> -->
             <div id="multiplayer-controls" class="drawer-section">
-                <div id="room-buttons">
+                <!-- <div id="room-buttons">
                     <button id="new-room" class="bg-blue-500 text-white px-4 py-2 rounded">New Room</button>
                     <button id="join-room" class="bg-green-500 text-white px-4 py-2 rounded">Join Room</button>
-                </div>
+                </div> -->
                 <div class="multiplayer-info">
                     <p>Room ID: <span id="roomId" class="font-mono" title="Click to copy">...</span></p>
                     <p>Your ID: <span id="myId" class="font-mono">...</span></p>
@@ -319,7 +328,7 @@
     </div>
 
     <!-- Join room dialog -->
-    <dialog id="join-room-dialog" class="p-8 rounded-lg shadow-xl backdrop:bg-gray-600 backdrop:bg-opacity-50">
+    <!-- <dialog id="join-room-dialog" class="p-8 rounded-lg shadow-xl backdrop:bg-gray-600 backdrop:bg-opacity-50">
         <article>
             <header>
                 <h3>Join Room</h3>
@@ -328,11 +337,16 @@
             <p class="mb-4">Enter Room Code: <input type="text" id="room-code" class="font-mono" required></p>
             <button id="connect-to-room" class="bg-blue-500 text-white px-4 py-2 rounded mb-4">Connect</button>
         </article>
-    </dialog>
+    </dialog> -->
 
     <!-- Game logic script -->
     <script src="game-logic-multiplayer.js" type="module"></script>
-    <script>
+    <script type="module">
+            import { initGame } from './game-logic-multiplayer.js';
+        document.addEventListener('DOMContentLoaded', () => {
+            initGame(receivedList);
+        });
+
         // DOM element references
         const panel = document.getElementById('panel');
         const collapseBtn = document.getElementById('collapse-btn');
@@ -359,13 +373,13 @@
         expandBtn.style.display = 'none';
 
         // Event listeners for join room dialog
-        joinRoomBtn.addEventListener('click', () => {
-            joinRoomDialog.showModal();
-        });
+        // joinRoomBtn.addEventListener('click', () => {
+        //     joinRoomDialog.showModal();
+        // });
 
-        closeDialogBtn.addEventListener('click', () => {
-            joinRoomDialog.close();
-        });
+        // closeDialogBtn.addEventListener('click', () => {
+        //     joinRoomDialog.close();
+        // });
 
         // Resize event listener to recenter the game area
         window.addEventListener('resize', () => {
@@ -379,10 +393,13 @@
         // Room ID click-to-copy functionality
         roomIdSpan.addEventListener('click', () => {
             const roomId = roomIdSpan.textContent;
-            navigator.clipboard.writeText(roomId).then(() => {
-                alert('Room ID copied to clipboard!');
+            const roomCode = receivedList.join(',');
+            const currentUrl = window.location.href.split('?')[0]; // Get the current URL without query parameters
+            const fullUrl = `${currentUrl}?room=${roomCode}`;
+            navigator.clipboard.writeText(fullUrl).then(() => {
+                alert('Room URL copied to clipboard!');
             }).catch(err => {
-                console.error('Failed to copy room ID: ', err);
+                console.error('Failed to copy room URL: ', err);
             });
         });
     </script>
