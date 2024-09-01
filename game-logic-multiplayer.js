@@ -13,6 +13,7 @@ const rectStrokeColor = "rgba(0, 0, 0, 1)";
 let achievements = [];
 
 let obstacles = []; // Global variable to store all obstacles
+let numObstacles = 0; // Default to 0 obstacles
 
 const colors = [
     "rgba(0, 0, 255, 0.7)",   // blue with opacity
@@ -75,10 +76,11 @@ export function initGame(roomId) {
 
 function reproduceAchievement(achievement) {
     // Extract data from the achievement
-    const [achievementNumCells, achievementScore, solution] = achievement;
+    const [achievementNumCells, achievementScore, solution, , , achievementNumObstacles] = achievement;
 
-    // Set the number of cells
+    // Set the number of cells and obstacles
     numCells = achievementNumCells;
+    numObstacles = achievementNumObstacles;
 
     // Recalculate game area and grid size
     gameArea = Math.min(Math.floor(window.innerWidth - 50), 500);
@@ -90,6 +92,9 @@ function reproduceAchievement(achievement) {
 
     // Clear the current board using the existing functionality
     document.getElementById("clear-button").click();
+
+    // Regenerate obstacles
+    generateObstacles(currentRoomCode, numObstacles);
 
     // Reproduce each rectangle from the solution
     solution.forEach((rect) => {
@@ -130,7 +135,7 @@ function reproduceAchievement(achievement) {
     // Update the rectangles list and achievements
     updateRectanglesList();
 
-    console.log(`Reproduced achievement: ${achievementNumCells}x${achievementNumCells} grid with score ${achievementScore}`);
+    console.log(`Reproduced achievement: ${achievementNumCells}x${achievementNumCells} grid with score ${achievementScore} and ${numObstacles} obstacles`);
 }
 
 function drawGrid() {
@@ -321,7 +326,8 @@ function isInsideCanvas(x, y) {
         y <= stageSize - margin
     );
 }
-function generateObstacles(seed) {
+
+function generateObstacles(seed, numObstacles = 0) {
     // Clear existing obstacles
     obstacles.forEach(obstacle => obstacle.destroy());
     obstacles = [];
@@ -333,7 +339,6 @@ function generateObstacles(seed) {
         return state / 0x7fffffff;
     }
 
-    const numObstacles = Math.floor(rng() * 5) + 1; 
     const occupiedCells = new Set();
 
     for (let i = 0; i < numObstacles; i++) {
@@ -428,7 +433,7 @@ function updateRectanglesList() {
     const totalArea = areas.reduce((sum, area) => sum + area, 0) + obstacles.length;
     const boardArea = numCells * numCells;
 
-    const canvasStatusElement = document.getElementById("canvas-status");
+    // const canvasStatusElement = document.getElementById("canvas-status");
     const duplicateStatusElement = document.getElementById("duplicate-status");
     const scoreStatusElement = document.getElementById("score-status");
 
@@ -438,11 +443,7 @@ function updateRectanglesList() {
     const singleColorUsed = usedColors.size === 1;
     const score = canvasCovered ? Math.max(...areas) - Math.min(...areas) : null;
 
-    updateStatusText(
-        canvasStatusElement,
-        canvasCovered ? "✓ Canvas covered" : "✗ Canvas is not covered",
-        canvasCovered ? "success" : "error"
-    );
+
     updateStatusText(
         duplicateStatusElement,
         noDuplicates ? "✓ No duplicates" : "✗ Duplicates found",
@@ -480,8 +481,9 @@ function updateRectanglesList() {
         });
 
         const timestamp = new Date().toISOString();
-        const achievement = [numCells, score, solution, timestamp, selfId];
+        const achievement = [numCells, score, solution, timestamp, selfId, numObstacles];
 
+        console.log(achievements);
         if (!achievements.some(([, , sol]) => areSolutionsEqual(sol, solution))) {
             achievements.push(achievement);
             updateAchievementsList();
@@ -523,7 +525,7 @@ function updateAchievementsList() {
     // Sort achievements by timestamp (most recent first)
 
     const sortedAchievements = achievements
-        .filter(([n]) => n === numCells) // Filter by current N
+        .filter(([n, , , , , o]) => n === numCells && o === numObstacles) // Filter by current N and number of obstacles
         .sort((a, b) => {
             const scoreA = a[1];
             const scoreB = b[1];
@@ -622,16 +624,38 @@ function logMessage(message) {
     console.log(message);
 }
 
-// Setup event listeners for grid size selection
-document.querySelectorAll('input[name="grid-size"]').forEach(radio => {
-    radio.addEventListener('change', (e) => {
-        numCells = parseInt(e.target.value);
-        gridSize = Math.round(gameArea / (numCells + 1));
-        console.log(numCells, gridSize);
-        initGame();
+// Obstacle selector functionality
+const obstacleIcons = document.querySelectorAll('.obstacle-icon');
+const defaultObstacleIcon = document.querySelector('.obstacle-icon[data-value="0"]');
+
+// Set default selection to 0
+defaultObstacleIcon.classList.add('selected');
+numObstacles = 0;
+
+obstacleIcons.forEach(icon => {
+    icon.addEventListener('click', () => {
+        obstacleIcons.forEach(i => i.classList.remove('selected'));
+        icon.classList.add('selected');
+        const selectedValue = parseInt(icon.getAttribute('data-value'));
+        console.log('Selected obstacles:', selectedValue);
+        
+        // Update numObstacles and regenerate obstacles
+        numObstacles = selectedValue;
+        generateObstacles(currentRoomCode, numObstacles);
         updateAchievementsList();
     });
 });
+
+// Setup event listeners for grid size selection
+// document.querySelectorAll('input[name="grid-size"]').forEach(radio => {
+//     radio.addEventListener('change', (e) => {
+//         numCells = parseInt(e.target.value);
+//         gridSize = Math.round(gameArea / (numCells + 1));
+//         console.log(numCells, gridSize);
+//         initGame();
+//         updateAchievementsList();
+//     });
+// });
 
 // Clear button event listener
 document.getElementById("clear-button").addEventListener("click", () => {
