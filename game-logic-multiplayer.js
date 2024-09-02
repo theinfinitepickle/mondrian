@@ -334,7 +334,7 @@ function generateObstacles(seed, numObstacles = 0) {
     obstacles = [];
 
     // Create a simple seeded random number generator
-    let state = seed.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
+    let state = seed.split('').reduce((a, b) => a + b.charCodeAt(0), 0) + numObstacles;
     function rng() {
         state = (state * 1103515245 + 12345) & 0x7fffffff;
         return state / 0x7fffffff;
