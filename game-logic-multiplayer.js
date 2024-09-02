@@ -43,8 +43,6 @@ let receiveAchievements;
 
 
 export function initGame(roomId) {
-    console.log('Received list in game logic:', roomId);
- 
     // Clear existing stage if it exists
     if (stage) {
         stage.destroy();
@@ -328,7 +326,6 @@ function isInsideCanvas(x, y) {
 }
 
 function generateObstacles(seed, numObstacles = 0) {
-    console.log(seed, numObstacles);
     // Clear existing obstacles
     obstacles.forEach(obstacle => obstacle.destroy());
     obstacles = [];
@@ -382,7 +379,6 @@ function rectanglesOverlap(r1, r2) {
         r1.y >= r2.y + r2.height - 5 ||
         r1.y + r1.height - 5 <= r2.y
     );
-    console.log(r1, r2, overlap);
     return overlap;
 }
 
@@ -496,7 +492,6 @@ function updateRectanglesList() {
         }
     }
 
-    console.log("Achievements:", achievements);
 }
 
 function areSolutionsEqual(sol1, sol2) {
@@ -569,8 +564,6 @@ function updateAchievementsList() {
         loadCell.appendChild(svg);
         row.appendChild(loadCell);
 
-        console.log(row);
-
         fragment.appendChild(row);
     });
 
@@ -638,7 +631,6 @@ obstacleIcons.forEach(icon => {
         obstacleIcons.forEach(i => i.classList.remove('selected'));
         icon.classList.add('selected');
         const selectedValue = parseInt(icon.getAttribute('data-value'));
-        console.log('Selected obstacles:', selectedValue);
         
         // Update numObstacles and regenerate obstacles
         numObstacles = selectedValue;
@@ -646,17 +638,6 @@ obstacleIcons.forEach(icon => {
         updateAchievementsList();
     });
 });
-
-// Setup event listeners for grid size selection
-// document.querySelectorAll('input[name="grid-size"]').forEach(radio => {
-//     radio.addEventListener('change', (e) => {
-//         numCells = parseInt(e.target.value);
-//         gridSize = Math.round(gameArea / (numCells + 1));
-//         console.log(numCells, gridSize);
-//         initGame();
-//         updateAchievementsList();
-//     });
-// });
 
 // Clear button event listener
 document.getElementById("clear-button").addEventListener("click", () => {
@@ -716,8 +697,6 @@ function updateUserList() {
 }
 
 function updateAchievements(newAchievements) {
-    console.log("newAchievements");
-    console.log(newAchievements);
     achievements = newAchievements;
     updateAchievementsList();
 }
@@ -733,7 +712,6 @@ function sendGameState() {
 
 function initializeJoinRoom(roomId) {
     currentRoomCode = roomId.join(',');
-    console.log(currentRoomCode);
 
     const appId = `mondrian-${currentRoomCode}`;
     const config = { appId: appId };
@@ -765,28 +743,3 @@ function initializeJoinRoom(roomId) {
 
     console.log("Connected to room. Room code:", currentRoomCode);
 }
-
-
-// function handleReceivedObstacles(receivedObstacles) {
-//     // Clear existing obstacles
-//     obstacles.forEach(obstacle => obstacle.destroy());
-//     obstacles = [];
-
-//     // Create new obstacles based on received data
-//     receivedObstacles.forEach(obs => {
-//         const obstacle = new Konva.Circle({
-//             x: obs.x,
-//             y: obs.y,
-//             radius: gridSize / 4,
-//             fill: 'gray',
-//             stroke: 'black',
-//             strokeWidth: 2,
-//         });
-
-//         obstacles.push(obstacle);
-//         layer.add(obstacle);
-//     });
-
-//     layer.draw();
-//     updateRectanglesList();
-// }
