@@ -70,7 +70,7 @@ export function initGame(roomId) {
 
     layer.draw();
 
-    generateObstacles(roomId);
+    // generateObstacles(currentRoomCode, 0);
     initializeJoinRoom(roomId);
 }
 
@@ -328,12 +328,13 @@ function isInsideCanvas(x, y) {
 }
 
 function generateObstacles(seed, numObstacles = 0) {
+    console.log(seed, numObstacles);
     // Clear existing obstacles
     obstacles.forEach(obstacle => obstacle.destroy());
     obstacles = [];
 
     // Create a simple seeded random number generator
-    let state = Array.isArray(seed) ? seed.join(',').split('').reduce((a, b) => (a << 5) - a + b.charCodeAt(0), 0) : seed;
+    let state = seed.split('').reduce((a, b) => a + b.charCodeAt(0), 0);
     function rng() {
         state = (state * 1103515245 + 12345) & 0x7fffffff;
         return state / 0x7fffffff;
@@ -732,6 +733,8 @@ function sendGameState() {
 
 function initializeJoinRoom(roomId) {
     currentRoomCode = roomId.join(',');
+    console.log(currentRoomCode);
+
     const appId = `mondrian-${currentRoomCode}`;
     const config = { appId: appId };
 
