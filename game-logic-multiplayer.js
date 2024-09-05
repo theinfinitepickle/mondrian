@@ -133,7 +133,7 @@ function reproduceAchievement(achievement) {
     // Update the rectangles list and achievements
     updateRectanglesList();
 
-    console.log(`Reproduced achievement: ${achievementNumCells}x${achievementNumCells} grid with score ${achievementScore} and ${numObstacles} obstacles`);
+    logMessage(`Reproduced achievement: ${achievementNumCells}x${achievementNumCells} grid with score ${achievementScore} and ${numObstacles} obstacles`);
 }
 
 function drawGrid() {
@@ -477,10 +477,10 @@ function updateRectanglesList() {
             };
         });
 
-        const timestamp = new Date().toISOString();
+        const timestamp = new Date().toUTCString();
         const achievement = [numCells, score, solution, timestamp, selfId, numObstacles];
 
-        console.log(achievements);
+        logMessage(achievements);
         if (!achievements.some(([, , sol]) => areSolutionsEqual(sol, solution))) {
             achievements.push(achievement);
             updateAchievementsList();
@@ -663,7 +663,7 @@ document.addEventListener("dblclick", function (event) {
 });
 
 function getAvatarUrl(seed) {
-    const icons = ['fa-bug', 'fa-cat', 'fa-crow', 'fa-dog', 'fa-fish', 'fa-frog', 'fa-hippo', 'fa-kiwi-bird', 'fa-worm'];
+    const icons = ['fa-bug', 'fa-cat', 'fa-crow', 'fa-dog', 'fa-fish', 'fa-frog', 'fa-hippo', 'fa-kiwi-bird', 'fa-worm', 'fa-otter', 'fa-shrimp', 'fa-person'];
     const colors = ['#90EE90', '#FFB6C1', '#ADD8E6']; // light green, light red, light blue
 
     // Use a simple hash function to get a deterministic index
@@ -697,7 +697,36 @@ function updateUserList() {
 }
 
 function updateAchievements(newAchievements) {
-    achievements = newAchievements;
+    let updated = false;
+    
+    // Add new achievements
+    for (const newAchievement of newAchievements) {
+        if (!achievements.some(a => 
+            JSON.stringify(a[2]) === JSON.stringify(newAchievement[2]) && 
+            a[1] === newAchievement[1] && 
+            a[4] === newAchievement[4]
+        )) {
+            achievements.push(newAchievement);
+            updated = true;
+        }
+    }
+    
+    // Check for achievements that are not in newAchievements
+    const missingAchievements = achievements.filter(a => 
+        !newAchievements.some(na => 
+            JSON.stringify(na[2]) === JSON.stringify(a[2]) && 
+            na[1] === a[1] && 
+            na[4] === a[4]
+        )
+    );
+    
+    if (missingAchievements.length > 0 || updated) {
+        // Broadcast the merged array
+        if (sendAchievements) {
+            sendAchievements(achievements);
+        }
+    }
+    
     updateAchievementsList();
 }
 
@@ -741,5 +770,6 @@ function initializeJoinRoom(roomId) {
         updateUserList();
     });
 
-    console.log("Connected to room. Room code:", currentRoomCode);
+
+    logMessage("Connected to room. Room code:", currentRoomCode);
 }
