@@ -507,8 +507,39 @@ function areSolutionsEqual(sol1, sol2) {
     });
 }
 
+function calculateTimeDifference(time1, time2) {
+    const date1 = new Date(time1);
+    const date2 = new Date(time2);
+    
+    const diffInSeconds = Math.abs(date2 - date1) / 1000;
+    
+    const hours = Math.floor(diffInSeconds / 3600);
+    const minutes = Math.floor((diffInSeconds % 3600) / 60);
+    const seconds = Math.floor(diffInSeconds % 60);
+    
+    let result = '';
+    
+    if (hours > 0) {
+        result += `${hours}h`;
+    }
+    
+    if (minutes > 0 || hours > 0) {
+        result += `${minutes}m`;
+    }
+    
+    result += `${seconds.toString().padStart(2, '0')}s`;
+    
+    return result;
+}
+
+
+
 function updateAchievementsList() {
     const tableBody = document.getElementById('detailed-log-table-body');
+    // Define a variable for the earliest achievement time
+    const earliestAchievementTime = achievements.length > 0 
+        ? new Date(Math.min(...achievements.map(achievement => new Date(achievement[3]))))
+        : null;
 
     // Clear existing rows
     while (tableBody.firstChild) {
@@ -535,6 +566,7 @@ function updateAchievementsList() {
             }
         });
 
+ 
     // Update best score
     if (sortedAchievements.length > 0) {
         const bestScore = sortedAchievements[0][1];
@@ -547,9 +579,8 @@ function updateAchievementsList() {
         const [n, score, solution, timestamp, playerId] = achievement;
 
         const row = document.createElement('tr');
-
         const descriptionCell = document.createElement('td');
-        descriptionCell.textContent = `${score}`;
+        descriptionCell.innerHTML = `${score}<br><span style="opacity: 0.5; font-size: 0.8em;">${calculateTimeDifference(earliestAchievementTime, timestamp)}</span>`;
         row.appendChild(descriptionCell);
 
         const playerIdCell = document.createElement('td');
@@ -570,6 +601,9 @@ function updateAchievementsList() {
     // Append the fragment to the table body
     tableBody.appendChild(fragment);
 }
+
+
+
 function createSVGPreview(gridSize, solution, obstacles) {
     const svgSize = 100; // Size of the SVG preview
     const cellSize = svgSize / gridSize;
