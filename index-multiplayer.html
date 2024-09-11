@@ -416,6 +416,22 @@
             });
         });
 
+
+        // Disable touch scrolling and refreshing
+        document.addEventListener(
+            "touchmove",
+            function (event) {
+                event.preventDefault();
+            },
+            { passive: false }
+        );
+
+        // Prevent double-tap zoom
+        document.addEventListener("dblclick", function (event) {
+            event.preventDefault();
+        });
+
+
     </script>
 </body>
 
