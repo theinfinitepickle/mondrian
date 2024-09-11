@@ -1,5 +1,5 @@
 import { isInsideCanvas, isOverlapping, logMessage } from './canvas-utils.js';
-import { gridSize, halfGridSize, margin, colors, updateRectanglesList } from './game-logic-multiplayer.js';
+import { gridSize, halfGridSize, margin, colors,updateRectanglesList } from './game-logic-multiplayer.js';
 
 let isDrawing = false;
 let startX, startY;

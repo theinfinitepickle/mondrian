@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Mondrian Art Puzzle - Solo</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@2/css/pico.classless.green.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://unpkg.com/konva@9/konva.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+
+<body>
+    <button id="expand-btn">☰</button>
+
+    <aside id="panel">
+        <header id="panel-header">
+            <h2>Mondrian Art Puzzle - Solo</h2>
+            <button id="collapse-btn" aria-label="Close">×</button>
+        </header>
+        <div id="panel-content">
+            <div class="drawer-section">
+                <h4>Level selector:</h4>
+                <div class="level-selector">
+                    <i class="fa-solid fa-video level-icon active" data-value="video1"></i>
+                    <i class="fa-solid fa-square level-icon active" data-value="1"><span>1</span></i>
+                    <i class="fa-solid fa-square level-icon" data-value="2"><span>2</span></i>
+                    <i class="fa-solid fa-square level-icon" data-value="3"><span>3</span></i>
+                    <i class="fa-solid fa-video level-icon" data-value="video2"></i>
+                    <i class="fa-solid fa-square level-icon" data-value="4"><span>4</span></i>
+                    <i class="fa-solid fa-square level-icon" data-value="5"><span>5</span></i>
+                    <i class="fa-solid fa-square level-icon" data-value="6"><span>6</span></i>
+                    <i class="fa-solid fa-square level-icon" data-value="7"><span>7</span></i>
+                    <i class="fa-solid fa-video level-icon" data-value="video3"></i>
+                    <i class="fa-solid fa-square level-icon" data-value="8"><span>8</span></i>
+                    <i class="fa-solid fa-square level-icon" data-value="9"><span>9</span></i>
+                    <i class="fa-solid fa-video level-icon" data-value="video4"></i>
+                    <i class="fa-solid fa-square level-icon" data-value="80"><span>*</span></i>
+                </div>
+            </div>
+
+            <div class="drawer-section">
+                <h4>Creation log:</h4>
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Score</th>
+                            <th>Solution</th>
+                        </tr>
+                    </thead>
+                    <tbody id="detailed-log-table-body">
+                        <!-- This will be populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </aside>
+
+    <div id="main-content-wrapper">
+        <main id="main-content">
+            <div id="game-controls">
+                <div id="target-score-status">Target score: ...</div>
+                <div id="score-status">Score is ...</div>
+                <button id="clear-button">Reset</button>
+            </div>
+            <article id="game-container">
+                <div id="container"></div>
+            </article>
+            <div id="status-bar">
+                <div id="duplicate-status" class="status-item">✗ Duplicates found</div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module">
+        import { initGame } from './game-logic-multiplayer.js';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            initGame();
+
+            const panel = document.getElementById('panel');
+            const collapseBtn = document.getElementById('collapse-btn');
+            const expandBtn = document.getElementById('expand-btn');
+            const mainContentWrapper = document.getElementById('main-content-wrapper');
+
+            function togglePanel() {
+                panel.classList.toggle('collapsed');
+                mainContentWrapper.classList.toggle('expanded');
+                expandBtn.style.display = panel.classList.contains('collapsed') ? 'block' : 'none';
+                window.dispatchEvent(new Event('resize'));
+            }
+
+            collapseBtn.addEventListener('click', togglePanel);
+            expandBtn.addEventListener('click', togglePanel);
+            expandBtn.style.display = 'none';
+
+            window.addEventListener('resize', () => {
+                if (panel.classList.contains('collapsed')) {
+                    mainContentWrapper.style.marginLeft = '0';
+                } else {
+                    mainContentWrapper.style.marginLeft = '300px';
+                }
+            });
+        });
+
+        document.addEventListener(
+            "touchmove",
+            function (event) {
+                event.preventDefault();
+            },
+            { passive: false }
+        );
+
+        document.addEventListener("dblclick", function (event) {
+            event.preventDefault();
+        });
+    </script>
+</body>
+
+</html>

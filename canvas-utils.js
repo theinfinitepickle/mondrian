@@ -52,3 +52,9 @@ export function updateStatusText(element, text, addedClass) {
 export function logMessage(message) {
     console.log(message);
 }
+
+export function updateRectanglesList(layer) {
+    const rectangles = layer.find("Rect").filter(rect => rect.attrs.name !== "grid");
+    // Update your UI or perform any necessary actions with the rectangles list
+    console.log("Rectangles updated:", rectangles.length);
+}

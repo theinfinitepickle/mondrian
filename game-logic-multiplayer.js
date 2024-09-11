@@ -4,9 +4,12 @@ import { isInsideCanvas, isOverlapping, updateStatusText, logMessage } from './c
 import { areSolutionsEqual, calculateTimeDifference } from './achievement-utils.js';
 import { getAvatarUrl, updateUserList } from './user-utils.js';
 import { setupEventListeners } from './canvas-interactions.js';
+import { levels, getLevelById } from './levels.js';
 
 export let obstacles = [];
 export let numObstacles = 0;
+
+export let currentLevel = 80;
 
 export const margin = 30;
 export let numCells = 8;
@@ -32,6 +35,10 @@ export const colors = [
     "rgba(255, 255, 255, 0.7)" // white with opacity
 ];
 
+const rectStrokeColor = "rgba(0, 0, 0, 1)";
+const rectStrokeWidth = 4;
+const rectOpacity = 0.7;
+
 let stage, layer;
 
 // Mupltiplayer variables
@@ -46,7 +53,15 @@ let currentRoomCode = null;
 let sendAchievements;
 let receiveAchievements;
 
+let regime;
+
+
 export function initGame(roomId) {
+    if (roomId) {
+        regime = "multiplayer";
+    } else {
+        regime = "solo";
+    }
     // Clear existing stage if it exists
     if (stage) {
         stage.destroy();
@@ -60,8 +75,92 @@ export function initGame(roomId) {
     setupEventListeners(stage, layer);
 
     layer.draw();
+    if (regime === "multiplayer") {
+        // Obstacle selector functionality
+        const obstacleIcons = document.querySelectorAll('.obstacle-icon');
+        const defaultObstacleIcon = document.querySelector('.obstacle-icon[data-value="0"]');
+        
+        // Set default selection to 0
+        defaultObstacleIcon.classList.add('selected');
+        numObstacles = 0;
 
-    initializeJoinRoom(roomId);
+        initializeJoinRoom(roomId);
+        obstacleIcons.forEach(icon => {
+            icon.addEventListener('click', () => {
+                obstacleIcons.forEach(i => i.classList.remove('selected'));
+                icon.classList.add('selected');
+                const selectedValue = parseInt(icon.getAttribute('data-value'));
+                
+                // Update numObstacles and regenerate obstacles
+                numObstacles = selectedValue;
+                logMessage(numObstacles);
+                obstacles = generateObstacles(currentRoomCode, numObstacles, obstacles, layer, gridSize, margin, numCells, currentLevel);
+                logMessage(obstacles);
+                
+                // Clear the canvas and update the rectangles list
+                document.getElementById("clear-button").click();
+                updateRectanglesList();
+                updateAchievementsList();
+            });
+        });
+    } else if (regime === "solo") {
+        // Add click events for playing videos and selecting levels
+        const levelIcons = document.querySelectorAll('.level-icon');
+        levelIcons.forEach(icon => {
+            icon.addEventListener('click', () => {
+                // Remove 'selected' class from all icons
+                levelIcons.forEach(i => i.classList.remove('selected'));
+                // Add 'selected' class to the clicked icon
+                icon.classList.add('selected');
+
+                const value = icon.getAttribute('data-value');
+                if (value.startsWith('video')) {
+                    // Play video function (to be implemented)
+                    playVideo(value);
+                } else {
+                    // Update currentLevel and generate level
+                    currentLevel = parseInt(value);
+                    const level = getLevelById(currentLevel);
+                    numCells = level.gridSize;
+                    gridSize = Math.round(gameArea / (numCells + 1));
+                    halfGridSize = Math.round(gridSize / 2);
+                    stageSize = numCells * gridSize + 2 * margin;
+                    // Redraw the game field to match numCells
+                    stage.width(stageSize);
+                    stage.height(stageSize);
+                    layer.removeChildren();
+                    drawGrid(layer);
+                    obstacles = generateObstacles(currentRoomCode, numObstacles, obstacles, layer, gridSize, margin, numCells, currentLevel);
+                    generateLevel(currentLevel);
+                    updateRectanglesList();
+                    updateAchievementsList();
+
+                    if (regime === "solo") {
+                            document.getElementById('target-score-status').textContent = `Target Score: ${level.targetScore}`;
+
+                    }
+                }
+            });
+        });
+
+        // Select level 1 by default
+        const defaultLevelIcon = document.querySelector('.level-icon[data-value="1"]');
+        if (defaultLevelIcon) {
+            defaultLevelIcon.classList.add('selected');
+            generateLevel(1);
+        }
+    }
+}
+
+// Placeholder functions for video playback and level generation
+function playVideo(videoId) {
+    console.log(`Playing video: ${videoId}`);
+    // Implement video playback logic here
+}
+
+function generateLevel(levelNumber) {
+    console.log(`Generating level: ${levelNumber}`);
+    // Implement level generation logic here
 }
 
 function reproduceAchievement(achievement) {
@@ -76,8 +175,8 @@ function reproduceAchievement(achievement) {
     initGame(currentRoomCode.split(','));
 
     // Regenerate obstacles
-    obstacles.length = 0; // Clear the existing obstacles
-    obstacles.push(...generateObstacles(currentRoomCode, numObstacles, [], layer));
+    // obstacles.length = 0; // Clear the existing obstacles
+    // obstacles.push(...generateObstacles(currentRoomCode, numObstacles, [], layer));
 
     // Clear the canvas before reproducing the achievement
     document.getElementById("clear-button").click();
@@ -197,7 +296,7 @@ export function updateRectanglesList() {
         });
 
         const timestamp = new Date().toUTCString();
-        const achievement = [numCells, score, solution, timestamp, selfId, numObstacles];
+        const achievement = [numCells, score, solution, timestamp, selfId, numObstacles, currentLevel];
 
         logMessage(achievements);
         if (!achievements.some(([, , sol]) => areSolutionsEqual(sol, solution))) {
@@ -228,15 +327,16 @@ function updateAchievementsList() {
     // Create a document fragment to hold the new rows
     const fragment = document.createDocumentFragment();
 
+    let sortedAchievements = [];
     // Sort achievements by timestamp (most recent first)
-
-    const sortedAchievements = achievements
-        .filter(([n, , , , , o]) => n === numCells && o === numObstacles) // Filter by current N and number of obstacles
-        .sort((a, b) => {
-            const scoreA = a[1];
-            const scoreB = b[1];
-            const timeA = new Date(a[3]);
-            const timeB = new Date(b[3]);
+    if (regime === "multiplayer") {
+        sortedAchievements = achievements
+            .filter(([n, , , , , o, l]) => n === numCells && o === numObstacles && l === currentLevel) // Filter by current N and number of obstacles
+            .sort((a, b) => {
+                const scoreA = a[1];
+                const scoreB = b[1];
+                const timeA = new Date(a[3]);
+                const timeB = new Date(b[3]);
 
             if (scoreA !== scoreB) {
                 return scoreA - scoreB; // Sort by score (smallest first)
@@ -244,14 +344,32 @@ function updateAchievementsList() {
                 return timeA - timeB; // If scores are equal, sort by time (earliest first)
             }
         });
+    } else if (regime === "solo") {
+        sortedAchievements = achievements
+            .filter(([n, , , , , , l]) => n === numCells && l === currentLevel) // Filter by current N and number of obstacles
+            .sort((a, b) => {
+                const scoreA = a[1];
+                const scoreB = b[1];
+                const timeA = new Date(a[3]);
+                const timeB = new Date(b[3]);
+    
+                if (scoreA !== scoreB) {
+                    return scoreA - scoreB; // Sort by score (smallest first)
+                } else {
+                    return timeA - timeB; // If scores are equal, sort by time (earliest first)
+                }
+            });
+    }
 
  
     // Update best score
-    if (sortedAchievements.length > 0) {
-        const bestScore = sortedAchievements[0][1];
-        document.getElementById('best-score-status').textContent = `Best Score: ${bestScore}`;
-    } else {
-        document.getElementById('best-score-status').textContent = 'Best Score: N/A';
+    if (regime === "multiplayer") {
+        if (sortedAchievements.length > 0) {
+            const bestScore = sortedAchievements[0][1];
+            document.getElementById('best-score-status').textContent = `Best Score: ${bestScore}`;
+        } else {
+            document.getElementById('best-score-status').textContent = 'Best Score: N/A';
+        }
     }
 
     sortedAchievements.forEach(achievement => {
@@ -262,11 +380,13 @@ function updateAchievementsList() {
         descriptionCell.innerHTML = `${score}<br><span style="opacity: 0.5; font-size: 0.8em;">${calculateTimeDifference(earliestAchievementTime, timestamp)}</span>`;
         row.appendChild(descriptionCell);
 
-        const playerIdCell = document.createElement('td');
-        const { icon, color } = getAvatarUrl(playerId);
-        const playerIdShort = `<i class="fas ${icon}" style="color: ${color};" title="${playerId ? playerId.substring(0, 2) : '??'}"></i>`;
-        playerIdCell.innerHTML = `${playerIdShort}`;
-        row.appendChild(playerIdCell);
+        if (regime === "multiplayer") {
+            const playerIdCell = document.createElement('td');
+            const { icon, color } = getAvatarUrl(playerId);
+            const playerIdShort = `<i class="fas ${icon}" style="color: ${color};" title="${playerId ? playerId.substring(0, 2) : '??'}"></i>`;
+            playerIdCell.innerHTML = `${playerIdShort}`;
+            row.appendChild(playerIdCell);
+        }
 
         const loadCell = document.createElement('td');
         const svg = createSVGPreview(n, solution, obstacles);
@@ -281,40 +401,6 @@ function updateAchievementsList() {
     tableBody.appendChild(fragment);
 }
 
-// Obstacle selector functionality
-const obstacleIcons = document.querySelectorAll('.obstacle-icon');
-const defaultObstacleIcon = document.querySelector('.obstacle-icon[data-value="0"]');
-
-// Set default selection to 0
-defaultObstacleIcon.classList.add('selected');
-numObstacles = 0;
-
-obstacleIcons.forEach(icon => {
-    icon.addEventListener('click', () => {
-        obstacleIcons.forEach(i => i.classList.remove('selected'));
-        icon.classList.add('selected');
-        const selectedValue = parseInt(icon.getAttribute('data-value'));
-        
-        // Update numObstacles and regenerate obstacles
-        numObstacles = selectedValue;
-        obstacles.length = 0; // Clear the existing obstacles
-        obstacles.push(...generateObstacles(currentRoomCode, numObstacles, [], layer));
-        
-        // Clear the canvas and update the rectangles list
-        document.getElementById("clear-button").click();
-        updateRectanglesList();
-        updateAchievementsList();
-    });
-});
-
-// Clear button event listener
-document.getElementById("clear-button").addEventListener("click", () => {
-    layer.find("Rect").forEach((rect) => rect.destroy());
-    layer.find("Text").forEach((text) => text.destroy());
-    layer.draw();
-    logMessage("Canvas cleared.");
-    updateRectanglesList();
-});
 
 // Multiplayer routines
 function updateAchievements(newAchievements) {
@@ -390,3 +476,12 @@ function initializeJoinRoom(roomId) {
 
     logMessage("Connected to room. Room code:", currentRoomCode);
 }
+
+// Clear button event listener
+document.getElementById("clear-button").addEventListener("click", () => {
+    layer.find("Rect").forEach((rect) => rect.destroy());
+    layer.find("Text").forEach((text) => text.destroy());
+    layer.draw();
+    logMessage("Canvas cleared.");
+    updateRectanglesList();
+});
