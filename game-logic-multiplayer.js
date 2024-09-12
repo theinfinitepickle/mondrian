@@ -5,6 +5,7 @@ import { areSolutionsEqual, calculateTimeDifference } from './achievement-utils.
 import { getAvatarUrl, updateUserList } from './user-utils.js';
 import { setupEventListeners } from './canvas-interactions.js';
 import { levels, getLevelById } from './levels.js';
+import { saveAchievements, loadAchievements, achievementsExist, clearAchievements } from './game-state.js';
 
 export let obstacles = [];
 export let numObstacles = 0;
@@ -26,7 +27,7 @@ export function updateGameArea(newNumCells) {
     stageSize = numCells * gridSize + 2 * margin;
 }
 
-let achievements = [];
+export let achievements = [];
 
 export const colors = [
     "rgba(0, 0, 255, 0.7)",   // blue with opacity
@@ -59,8 +60,16 @@ let regime;
 export function initGame(roomId) {
     if (roomId) {
         regime = "multiplayer";
+        currentLevel = 80;
     } else {
         regime = "solo";
+        currentLevel = 1;
+        // Load achievements when starting in solo mode
+        if (achievementsExist()) {
+            loadAchievements();
+            updateAchievementsList();
+            updateLevelStatus();
+        }
     }
     // Clear existing stage if it exists
     if (stage) {
@@ -70,6 +79,12 @@ export function initGame(roomId) {
     const { stage: newStage, layer: newLayer } = createStage("container");
     stage = newStage;
     layer = newLayer;
+    // Update numCells from the level info
+    const level = getLevelById(currentLevel);
+    numCells = level.gridSize;
+    gridSize = Math.round(gameArea / (numCells + 1));
+    halfGridSize = Math.round(gridSize / 2);
+    stageSize = numCells * gridSize + 2 * margin;
 
     drawGrid(layer);
     setupEventListeners(stage, layer);
@@ -136,8 +151,7 @@ export function initGame(roomId) {
                     updateAchievementsList();
 
                     if (regime === "solo") {
-                            document.getElementById('target-score-status').textContent = `Target Score: ${level.targetScore}`;
-
+                        document.getElementById('target-score-status').textContent = `Target Score: ${level.targetScore}`;
                     }
                 }
             });
@@ -149,6 +163,9 @@ export function initGame(roomId) {
             defaultLevelIcon.classList.add('selected');
             generateLevel(1);
         }
+
+        // Add this line to update level status when initializing the game
+        updateLevelStatus();
     }
 }
 
@@ -298,14 +315,18 @@ export function updateRectanglesList() {
         const timestamp = new Date().toUTCString();
         const achievement = [numCells, score, solution, timestamp, selfId, numObstacles, currentLevel];
 
-        logMessage(achievements);
         if (!achievements.some(([, , sol]) => areSolutionsEqual(sol, solution))) {
+            logMessage("Achievement added");
             achievements.push(achievement);
             updateAchievementsList();
+            updateLevelStatus();
             // After updating the local achievements list, sync with Trystero
-            if (room) {
+            if (regime === "multiplayer" && room) {
                 const [sendAchievements] = room.makeAction("achievements");
                 sendAchievements(achievements);
+            } else if (regime === "solo") {
+                // Save achievements to local storage in solo mode
+                saveAchievements();
             }
         }
     }
@@ -399,6 +420,11 @@ function updateAchievementsList() {
 
     // Append the fragment to the table body
     tableBody.appendChild(fragment);
+
+    // Add this line at the end of the function
+    if (regime === "solo") {
+        updateLevelStatus();
+    }
 }
 
 
@@ -485,3 +511,73 @@ document.getElementById("clear-button").addEventListener("click", () => {
     logMessage("Canvas cleared.");
     updateRectanglesList();
 });
+export function updateLevelStatus() {
+    const completedLevels = new Set();
+    const openLevels = new Set();
+    const closedLevels = new Set();
+
+    // First, mark all levels as closed
+    levels.forEach(level => closedLevels.add(level.id));
+
+    // Evaluate achievements
+    achievements.forEach(achievement => {
+        const [achievementNumCells, achievementScore, , , , , achievementLevelId] = achievement;
+        const level = getLevelById(achievementLevelId);
+
+        if (level && achievementScore <= level.targetScore && achievementNumCells === level.gridSize) {
+            completedLevels.add(level.id);
+            closedLevels.delete(level.id);
+
+            // Open the next level if it exists
+            const nextLevelId = level.id + 1;
+            const nextLevel = getLevelById(nextLevelId);
+            if (nextLevel) {
+                openLevels.add(nextLevelId);
+                closedLevels.delete(nextLevelId);
+            }
+        }
+    });
+
+    // Always open the two lowest uncompleted levels
+    let openCount = 0;
+    for (let i = 1; i <= levels.length && openCount < 2; i++) {
+        if (!completedLevels.has(i)) {
+            openLevels.add(i);
+            closedLevels.delete(i);
+            openCount++;
+        }
+    }
+
+    // Update UI to reflect level status
+    updateLevelUI(completedLevels, openLevels, closedLevels);
+    logMessage(completedLevels, openLevels, closedLevels);
+    return { completedLevels, openLevels, closedLevels };
+}
+
+function updateLevelUI(completedLevels, openLevels, closedLevels) {
+    const levelIcons = document.querySelectorAll('.level-icon');
+    levelIcons.forEach(icon => {
+        const levelId = parseInt(icon.getAttribute('data-value'));
+        icon.classList.remove('completed', 'open', 'closed');
+        
+        if (completedLevels.has(levelId)) {
+            icon.classList.add('completed');
+            icon.style.pointerEvents = 'auto';
+        } else if (openLevels.has(levelId)) {
+            icon.classList.add('open');
+            icon.style.pointerEvents = 'auto';
+        } else {
+            icon.classList.add('closed');
+            icon.style.pointerEvents = 'none';
+        }
+    });
+}
+
+export function resetGameScore() {
+    achievements = [];
+    clearAchievements();
+    updateAchievementsList();
+    updateLevelStatus();
+    initGame(); // Reinitialize the game to reset everything
+    logMessage("Game score has been reset.");
+}

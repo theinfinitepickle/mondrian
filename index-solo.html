@@ -12,6 +12,7 @@
 </head>
 
 <body>
+    <a id="reset-game-link" href="#" style="position: fixed; top: 10px; right: 10px; color: gray; text-decoration: none;">Reset Game Score</a>
     <button id="expand-btn">☰</button>
 
     <aside id="panel">
@@ -74,10 +75,19 @@
     </div>
 
     <script type="module">
-        import { initGame } from './game-logic-multiplayer.js';
+        import { initGame, resetGameScore } from './game-logic-multiplayer.js';
 
         document.addEventListener('DOMContentLoaded', () => {
             initGame();
+
+            // Add event listener for the reset game link
+            const resetGameLink = document.getElementById('reset-game-link');
+            resetGameLink.addEventListener('click', (e) => {
+                e.preventDefault();
+                if (confirm('Are you sure you want to reset your game score? This action cannot be undone.')) {
+                    resetGameScore();
+                }
+            });
 
             const panel = document.getElementById('panel');
             const collapseBtn = document.getElementById('collapse-btn');
