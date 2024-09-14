@@ -316,9 +316,22 @@ dialog header button {
     background-color: #2196F3;
     opacity: 1;
 }
+
 .level-icon.completed span {
     background-color: #2196F3;
     color: white;
+    opacity: 1;
+}
+
+.level-icon.passed {
+    color: #FFC107;
+    background-color: #FFC107;
+    opacity: 1;
+}
+
+.level-icon.passed span {
+    background-color: #FFC107;
+    color: black;
     opacity: 1;
 }
 
